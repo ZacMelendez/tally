@@ -168,7 +168,7 @@ const DebtForm: React.FC<DebtFormProps> = ({
                 analyticsService.trackDebtAdded(
                     formData.category,
                     amount,
-                    interestRate
+                    interestRate || 0
                 );
 
                 // Create net worth snapshot after successful creation
