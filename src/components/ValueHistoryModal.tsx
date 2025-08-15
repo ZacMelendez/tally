@@ -13,15 +13,9 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Asset, Debt, AssetValueHistory, DebtValueHistory } from "../types";
-import {
-    getAssetValueHistory,
-    getDebtValueHistory,
-    addAssetValueHistory,
-    addDebtValueHistory,
-} from "../services/valueHistoryService";
-import { createSnapshotFromCurrentData } from "../services/netWorthService";
+import { apiService } from "../services/apiService";
 import { useAuth } from "../contexts/AuthContext";
-import { useRateLimit } from "../hooks/useRateLimit";
+import { useBackendRateLimit } from "../hooks/useBackendRateLimit";
 import toast from "react-hot-toast";
 import { Line } from "react-chartjs-2";
 import {
@@ -64,7 +58,7 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
     onValueUpdate,
 }) => {
     const { currentUser } = useAuth();
-    const { checkRateLimit } = useRateLimit();
+    const { checkRateLimit } = useBackendRateLimit();
     const [history, setHistory] = useState<ValueHistoryEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
@@ -84,15 +78,9 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
             let historyData: ValueHistoryEntry[];
 
             if (type === "asset") {
-                historyData = await getAssetValueHistory(
-                    item.id,
-                    currentUser.id
-                );
+                historyData = await apiService.getAssetHistory(item.id);
             } else {
-                historyData = await getDebtValueHistory(
-                    item.id,
-                    currentUser.id
-                );
+                historyData = await apiService.getDebtHistory(item.id);
             }
 
             setHistory(historyData);
@@ -107,7 +95,10 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
     const handleAddValue = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!currentUser || !checkRateLimit("add-asset")) return;
+        if (!currentUser) return;
+
+        const rateLimitPassed = await checkRateLimit("add-asset");
+        if (!rateLimitPassed) return;
 
         const value = parseFloat(newValue);
         if (isNaN(value) || value < 0) {
@@ -118,19 +109,15 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
         setSubmitting(true);
         try {
             if (type === "asset") {
-                await addAssetValueHistory(
-                    item.id,
-                    currentUser.id,
+                await apiService.addAssetHistory(item.id, {
                     value,
-                    newNote
-                );
+                    note: newNote,
+                });
             } else {
-                await addDebtValueHistory(
-                    item.id,
-                    currentUser.id,
+                await apiService.addDebtHistory(item.id, {
                     value,
-                    newNote
-                );
+                    note: newNote,
+                });
             }
 
             toast.success(
@@ -138,9 +125,6 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
                     type === "asset" ? "Asset" : "Debt"
                 } value updated successfully!`
             );
-
-            // Create net worth snapshot after successful value update
-            await createSnapshotFromCurrentData(currentUser.id);
 
             // Refresh history and update parent
             await loadHistory();

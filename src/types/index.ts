@@ -62,9 +62,24 @@ export type DebtCategory =
     | "medical"
     | "other";
 
+// Legacy rate limit state (for fallback)
 export interface RateLimitState {
     count: number;
     resetTime: number;
+}
+
+// Secure rate limiting types
+export interface SecureRateLimitResult {
+    success: boolean;
+    limit: number;
+    remaining: number;
+    reset: number;
+    retryAfter?: number;
+}
+
+export interface RateLimitConfig {
+    requests: number;
+    window: string; // e.g., "60 s", "5 m", "1 h"
 }
 
 export interface AssetValueHistory {
@@ -83,4 +98,39 @@ export interface DebtValueHistory {
     amount: number;
     note?: string;
     createdAt: Date;
+}
+
+// API Request/Response types
+export interface CreateAssetRequest {
+    name: string;
+    value: number;
+    category: AssetCategory;
+    description?: string;
+    url?: string;
+}
+
+export interface UpdateAssetRequest extends Partial<CreateAssetRequest> {}
+
+export interface CreateDebtRequest {
+    name: string;
+    amount: number;
+    category: DebtCategory;
+    interestRate?: number;
+    minimumPayment?: number;
+    description?: string;
+    url?: string;
+}
+
+export interface UpdateDebtRequest extends Partial<CreateDebtRequest> {}
+
+export interface AddValueHistoryRequest {
+    value: number;
+    note?: string;
+}
+
+export interface ApiResponse<T = any> {
+    success: boolean;
+    data?: T;
+    error?: string;
+    message?: string;
 }

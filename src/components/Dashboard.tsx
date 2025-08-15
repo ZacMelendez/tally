@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
     Plus,
@@ -7,18 +7,12 @@ import {
     CreditCard,
     Target,
     Activity,
+    RefreshCw,
 } from "lucide-react";
-import {
-    collection,
-    query,
-    where,
-    onSnapshot,
-    orderBy,
-} from "firebase/firestore";
-import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { Asset, Debt, NetWorthSnapshot } from "../types";
 import { analyticsService } from "../services/analyticsService";
+import { apiService } from "../services/apiService";
 import AssetForm from "./AssetForm";
 import DebtForm from "./DebtForm";
 import AssetManagementModal from "./AssetManagementModal";
@@ -26,6 +20,7 @@ import DebtManagementModal from "./DebtManagementModal";
 import NetWorthChart from "./NetWorthChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
 
 const Dashboard: React.FC = () => {
     const { currentUser } = useAuth();
@@ -39,110 +34,53 @@ const Dashboard: React.FC = () => {
     const [showAssetManagement, setShowAssetManagement] = useState(false);
     const [showDebtManagement, setShowDebtManagement] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     // Track page view
     useEffect(() => {
         analyticsService.trackPageView("Dashboard");
     }, []);
 
-    useEffect(() => {
+    const loadData = useCallback(async () => {
         if (!currentUser) return;
 
-        let loadingCountdown = 3; // Track when all 3 queries have completed
-        const setLoadingComplete = () => {
-            loadingCountdown--;
-            if (loadingCountdown <= 0) {
-                setLoading(false);
-            }
-        };
+        try {
+            const [assetsData, debtsData, netWorthData] = await Promise.all([
+                apiService.getAssets(),
+                apiService.getDebts(),
+                apiService.getNetWorthHistory(),
+            ]);
 
-        // Set a timeout to ensure loading doesn't hang forever
-        const loadingTimeout = setTimeout(() => {
-            console.log("Dashboard loading timeout - forcing completion");
+            setAssets(assetsData);
+            setDebts(debtsData);
+            setNetWorthHistory(netWorthData);
+        } catch (error) {
+            console.error("Error loading dashboard data:", error);
+            toast.error("Failed to load dashboard data");
+        } finally {
             setLoading(false);
-        }, 5000);
-
-        const unsubscribeAssets = onSnapshot(
-            query(
-                collection(db, "assets"),
-                where("userId", "==", currentUser.id),
-                orderBy("createdAt", "desc")
-            ),
-            {
-                next: (snapshot) => {
-                    const assetsData = snapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt.toDate(),
-                        updatedAt: doc.data().updatedAt.toDate(),
-                    })) as Asset[];
-                    setAssets(assetsData);
-                    setLoadingComplete();
-                },
-                error: (error) => {
-                    console.error("Assets query error:", error);
-                    setAssets([]);
-                    setLoadingComplete();
-                },
-            }
-        );
-
-        const unsubscribeDebts = onSnapshot(
-            query(
-                collection(db, "debts"),
-                where("userId", "==", currentUser.id),
-                orderBy("createdAt", "desc")
-            ),
-            {
-                next: (snapshot) => {
-                    const debtsData = snapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt.toDate(),
-                        updatedAt: doc.data().updatedAt.toDate(),
-                    })) as Debt[];
-                    setDebts(debtsData);
-                    setLoadingComplete();
-                },
-                error: (error) => {
-                    console.error("Debts query error:", error);
-                    setDebts([]);
-                    setLoadingComplete();
-                },
-            }
-        );
-
-        const unsubscribeNetWorth = onSnapshot(
-            query(
-                collection(db, "netWorthSnapshots"),
-                where("userId", "==", currentUser.id),
-                orderBy("createdAt", "desc")
-            ),
-            {
-                next: (snapshot) => {
-                    const historyData = snapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt.toDate(),
-                    })) as NetWorthSnapshot[];
-                    setNetWorthHistory(historyData);
-                    setLoadingComplete();
-                },
-                error: (error) => {
-                    console.error("NetWorth history query error:", error);
-                    setNetWorthHistory([]);
-                    setLoadingComplete();
-                },
-            }
-        );
-
-        return () => {
-            clearTimeout(loadingTimeout);
-            unsubscribeAssets();
-            unsubscribeDebts();
-            unsubscribeNetWorth();
-        };
+            setRefreshing(false);
+        }
     }, [currentUser]);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await loadData();
+    };
+
+    const handleAssetSuccess = () => {
+        setShowAssetForm(false);
+        loadData(); // Refresh data after asset operation
+    };
+
+    const handleDebtSuccess = () => {
+        setShowDebtForm(false);
+        loadData(); // Refresh data after debt operation
+    };
 
     const totalAssets = assets.reduce((sum, asset) => sum + asset.value, 0);
     const totalDebts = debts.reduce((sum, debt) => sum + debt.amount, 0);
@@ -260,6 +198,31 @@ const Dashboard: React.FC = () => {
                                 </div>
                             </CardContent>
                         </Card>
+                    </motion.div>
+                )}
+
+                {/* Refresh Button */}
+                {!isNewUser && (
+                    <motion.div
+                        className="flex justify-end mb-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <Button
+                            onClick={handleRefresh}
+                            variant="outline"
+                            size="sm"
+                            disabled={refreshing}
+                            className="gap-2"
+                        >
+                            <RefreshCw
+                                className={`w-4 h-4 ${
+                                    refreshing ? "animate-spin" : ""
+                                }`}
+                            />
+                            {refreshing ? "Refreshing..." : "Refresh"}
+                        </Button>
                     </motion.div>
                 )}
 
@@ -456,12 +419,12 @@ const Dashboard: React.FC = () => {
                 <AssetForm
                     open={showAssetForm}
                     onClose={() => setShowAssetForm(false)}
-                    onSuccess={() => setShowAssetForm(false)}
+                    onSuccess={handleAssetSuccess}
                 />
                 <DebtForm
                     open={showDebtForm}
                     onClose={() => setShowDebtForm(false)}
-                    onSuccess={() => setShowDebtForm(false)}
+                    onSuccess={handleDebtSuccess}
                 />
                 <AssetManagementModal
                     assets={assets}

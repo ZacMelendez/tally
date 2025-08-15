@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+    api:
+        build:
+            context: ./api
+            dockerfile: Dockerfile
+        ports:
+            - "3001:3001"
+        environment:
+            - PORT=3001
+            - HOST=0.0.0.0
+            - LOG_LEVEL=info
+            - FRONTEND_URL=http://localhost:5173
+            - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+            - FIREBASE_PRIVATE_KEY_ID=${FIREBASE_PRIVATE_KEY_ID}
+            - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
+            - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
+            - FIREBASE_CLIENT_ID=${FIREBASE_CLIENT_ID}
+        volumes:
+            - ./api/src:/app/src
+            - ./api/package.json:/app/package.json
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+        networks:
+            - net-worth-network
+
+networks:
+    net-worth-network:
+        driver: bridge

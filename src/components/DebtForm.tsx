@@ -1,8 +1,6 @@
 import React, { useState } from "react";
-import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
-import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
-import { useRateLimit } from "../hooks/useRateLimit";
+import { useBackendRateLimit } from "../hooks/useBackendRateLimit";
 import { Debt, DebtCategory } from "../types";
 import {
     Dialog,
@@ -13,11 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input, inputStyles } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    createInitialDebtHistory,
-    addDebtValueHistory,
-} from "../services/valueHistoryService";
-import { createSnapshotFromCurrentData } from "../services/netWorthService";
+import { apiService } from "../services/apiService";
 import toast from "react-hot-toast";
 import { analyticsService } from "../services/analyticsService";
 import { cn } from "@/lib/utils";
@@ -46,7 +40,7 @@ const DebtForm: React.FC<DebtFormProps> = ({
     debt,
 }) => {
     const { currentUser } = useAuth();
-    const { checkRateLimit } = useRateLimit();
+    const { checkRateLimit } = useBackendRateLimit();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: debt?.name || "",
@@ -64,7 +58,8 @@ const DebtForm: React.FC<DebtFormProps> = ({
         if (!currentUser) return;
 
         const action = debt ? "update-debt" : "add-debt";
-        if (!checkRateLimit(action)) return;
+        const rateLimitPassed = await checkRateLimit(action);
+        if (!rateLimitPassed) return;
 
         if (!formData.name.trim() || !formData.amount.trim()) {
             toast.error("Name and amount are required");
@@ -110,25 +105,21 @@ const DebtForm: React.FC<DebtFormProps> = ({
                 minimumPayment,
                 description: formData.description.trim(),
                 url: formData.url.trim(),
-                userId: currentUser.id,
-                updatedAt: new Date(),
             };
 
             if (debt) {
                 // Check if amount changed to add history entry
                 const amountChanged = debt.amount !== amount;
 
-                await updateDoc(doc(db, "debts", debt.id), debtData);
+                await apiService.updateDebt(debt.id, debtData);
 
                 // Add history entry if amount changed
                 if (amountChanged) {
                     try {
-                        await addDebtValueHistory(
-                            debt.id,
-                            currentUser.id,
-                            amount,
-                            "Amount updated"
-                        );
+                        await apiService.addDebtHistory(debt.id, {
+                            value: amount,
+                            note: "Amount updated",
+                        });
                     } catch (historyError) {
                         console.error(
                             "Error adding debt history:",
@@ -140,29 +131,8 @@ const DebtForm: React.FC<DebtFormProps> = ({
 
                 toast.success("Debt updated successfully!");
                 analyticsService.trackDebtUpdated(formData.category, amount);
-
-                // Create net worth snapshot after successful update
-                await createSnapshotFromCurrentData(currentUser.id);
             } else {
-                const docRef = await addDoc(collection(db, "debts"), {
-                    ...debtData,
-                    createdAt: new Date(),
-                });
-
-                // Create initial history entry for new debt
-                try {
-                    await createInitialDebtHistory(
-                        docRef.id,
-                        currentUser.id,
-                        amount
-                    );
-                } catch (historyError) {
-                    console.error(
-                        "Error creating initial debt history:",
-                        historyError
-                    );
-                    // Don't fail the creation if history fails
-                }
+                await apiService.createDebt(debtData);
 
                 toast.success("Debt added successfully!");
                 analyticsService.trackDebtAdded(
@@ -170,9 +140,6 @@ const DebtForm: React.FC<DebtFormProps> = ({
                     amount,
                     interestRate || 0
                 );
-
-                // Create net worth snapshot after successful creation
-                await createSnapshotFromCurrentData(currentUser.id);
             }
 
             setFormData({

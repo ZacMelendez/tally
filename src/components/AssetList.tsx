@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { useRateLimit } from "../hooks/useRateLimit";
+import { useBackendRateLimit } from "../hooks/useBackendRateLimit";
 import { Asset } from "../types";
 import AssetForm from "./AssetForm";
 import ValueHistoryModal from "./ValueHistoryModal";
@@ -24,15 +24,16 @@ interface AssetListProps {
 }
 
 const AssetList: React.FC<AssetListProps> = ({ assets }) => {
-    const { checkRateLimit } = useRateLimit();
+    const { checkRateLimit } = useBackendRateLimit();
     const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [viewingHistoryAsset, setViewingHistoryAsset] =
         useState<Asset | null>(null);
     const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
 
-    const handleDeleteClick = (asset: Asset) => {
-        if (!checkRateLimit("delete-item")) return;
+    const handleDeleteClick = async (asset: Asset) => {
+        const rateLimitPassed = await checkRateLimit("delete-item");
+        if (!rateLimitPassed) return;
         setAssetToDelete(asset);
     };
 

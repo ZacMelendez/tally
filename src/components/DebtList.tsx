@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { useRateLimit } from "../hooks/useRateLimit";
+import { useBackendRateLimit } from "../hooks/useBackendRateLimit";
 import { Debt } from "../types";
 import DebtForm from "./DebtForm";
 import ValueHistoryModal from "./ValueHistoryModal";
@@ -24,7 +24,7 @@ interface DebtListProps {
 }
 
 const DebtList: React.FC<DebtListProps> = ({ debts }) => {
-    const { checkRateLimit } = useRateLimit();
+    const { checkRateLimit } = useBackendRateLimit();
     const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [viewingHistoryDebt, setViewingHistoryDebt] = useState<Debt | null>(
@@ -32,8 +32,9 @@ const DebtList: React.FC<DebtListProps> = ({ debts }) => {
     );
     const [debtToDelete, setDebtToDelete] = useState<Debt | null>(null);
 
-    const handleDeleteClick = (debt: Debt) => {
-        if (!checkRateLimit("delete-item")) return;
+    const handleDeleteClick = async (debt: Debt) => {
+        const rateLimitPassed = await checkRateLimit("delete-item");
+        if (!rateLimitPassed) return;
         setDebtToDelete(debt);
     };
 

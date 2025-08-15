@@ -1,0 +1,38 @@
+{
+    "name": "net-worth-api",
+    "version": "1.0.0",
+    "description": "Net Worth Tracker API Server",
+    "main": "dist/server.js",
+    "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "build": "bunx tsc",
+        "build:docker": "bunx tsc",
+        "start": "node dist/server.js",
+        "clean": "rm -rf dist",
+        "db:init": "tsx scripts/init-rate-limit-db.ts init",
+        "db:sample": "tsx scripts/init-rate-limit-db.ts sample",
+        "db:cleanup": "tsx scripts/init-rate-limit-db.ts cleanup",
+        "db:reset": "tsx scripts/init-rate-limit-db.ts reset"
+    },
+    "dependencies": {
+        "@fastify/cors": "^8.4.0",
+        "@fastify/env": "^4.2.0",
+        "@fastify/jwt": "^7.2.4",
+        "@types/better-sqlite3": "^7.6.13",
+        "better-sqlite3": "^12.2.0",
+        "dotenv": "^17.2.1",
+        "fastify": "^4.24.3",
+        "firebase-admin": "^11.11.1",
+        "zod": "^3.22.4",
+        "zod-to-json-schema": "^3.24.6"
+    },
+    "devDependencies": {
+        "@types/glob": "^9.0.0",
+        "@types/node": "^20.9.0",
+        "tsx": "^4.6.0",
+        "typescript": "^5.2.2"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

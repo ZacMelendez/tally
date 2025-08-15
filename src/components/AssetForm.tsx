@@ -1,8 +1,6 @@
 import React, { useState } from "react";
-import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
-import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
-import { useRateLimit } from "../hooks/useRateLimit";
+import { useBackendRateLimit } from "../hooks/useBackendRateLimit";
 import { Asset, AssetCategory } from "../types";
 import {
     Dialog,
@@ -13,11 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input, inputStyles } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    createInitialAssetHistory,
-    addAssetValueHistory,
-} from "../services/valueHistoryService";
-import { createSnapshotFromCurrentData } from "../services/netWorthService";
+import { apiService } from "../services/apiService";
 import toast from "react-hot-toast";
 import { analyticsService } from "../services/analyticsService";
 import { cn } from "@/lib/utils";
@@ -49,7 +43,8 @@ const AssetForm: React.FC<AssetFormProps> = ({
     asset,
 }) => {
     const { currentUser } = useAuth();
-    const { checkRateLimit } = useRateLimit();
+    const { checkRateLimit, isLoading: rateLimitLoading } =
+        useBackendRateLimit();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: asset?.name || "",
@@ -65,7 +60,8 @@ const AssetForm: React.FC<AssetFormProps> = ({
         if (!currentUser) return;
 
         const action = asset ? "update-asset" : "add-asset";
-        if (!checkRateLimit(action)) return;
+        const rateLimitPassed = await checkRateLimit(action);
+        if (!rateLimitPassed) return;
 
         if (!formData.name.trim() || !formData.value.trim()) {
             toast.error("Name and value are required");
@@ -87,25 +83,21 @@ const AssetForm: React.FC<AssetFormProps> = ({
                 category: formData.category,
                 description: formData.description.trim(),
                 url: formData.url.trim(),
-                userId: currentUser.id,
-                updatedAt: new Date(),
             };
 
             if (asset) {
                 // Check if value changed to add history entry
                 const valueChanged = asset.value !== value;
 
-                await updateDoc(doc(db, "assets", asset.id), assetData);
+                await apiService.updateAsset(asset.id, assetData);
 
                 // Add history entry if value changed
                 if (valueChanged) {
                     try {
-                        await addAssetValueHistory(
-                            asset.id,
-                            currentUser.id,
+                        await apiService.addAssetHistory(asset.id, {
                             value,
-                            "Value updated"
-                        );
+                            note: "Value updated",
+                        });
                     } catch (historyError) {
                         console.error(
                             "Error adding asset history:",
@@ -117,35 +109,11 @@ const AssetForm: React.FC<AssetFormProps> = ({
 
                 toast.success("Asset updated successfully!");
                 analyticsService.trackAssetUpdated(formData.category, value);
-
-                // Create net worth snapshot after successful update
-                await createSnapshotFromCurrentData(currentUser.id);
             } else {
-                const docRef = await addDoc(collection(db, "assets"), {
-                    ...assetData,
-                    createdAt: new Date(),
-                });
-
-                // Create initial history entry for new asset
-                try {
-                    await createInitialAssetHistory(
-                        docRef.id,
-                        currentUser.id,
-                        value
-                    );
-                } catch (historyError) {
-                    console.error(
-                        "Error creating initial asset history:",
-                        historyError
-                    );
-                    // Don't fail the creation if history fails
-                }
+                await apiService.createAsset(assetData);
 
                 toast.success("Asset added successfully!");
                 analyticsService.trackAssetAdded(formData.category, value);
-
-                // Create net worth snapshot after successful creation
-                await createSnapshotFromCurrentData(currentUser.id);
             }
 
             setFormData({
@@ -292,10 +260,10 @@ const AssetForm: React.FC<AssetFormProps> = ({
                         </Button>
                         <Button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || rateLimitLoading}
                             className="flex-1"
                         >
-                            {loading ? (
+                            {loading || rateLimitLoading ? (
                                 <div className="loading-spinner" />
                             ) : asset ? (
                                 "Update Asset"
