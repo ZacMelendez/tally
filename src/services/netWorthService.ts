@@ -7,6 +7,7 @@ import {
     getDocs,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { analyticsService } from "./analyticsService";
 
 export const createNetWorthSnapshot = async (
     userId: string,
@@ -70,6 +71,13 @@ export const createSnapshotFromCurrentData = async (
 
         // Create snapshot with current totals
         await createNetWorthSnapshot(userId, totalAssets, totalDebts);
+
+        // Track net worth calculation
+        analyticsService.trackNetWorthCalculated(
+            totalAssets - totalDebts,
+            assetsSnapshot.docs.length,
+            debtsSnapshot.docs.length
+        );
     } catch (error) {
         console.error("Error creating net worth snapshot:", error);
         // Don't throw error to avoid breaking the main operation

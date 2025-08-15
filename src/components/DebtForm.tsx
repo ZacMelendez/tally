@@ -19,6 +19,7 @@ import {
 } from "../services/valueHistoryService";
 import { createSnapshotFromCurrentData } from "../services/netWorthService";
 import toast from "react-hot-toast";
+import { analyticsService } from "../services/analyticsService";
 import { cn } from "@/lib/utils";
 
 interface DebtFormProps {
@@ -138,6 +139,7 @@ const DebtForm: React.FC<DebtFormProps> = ({
                 }
 
                 toast.success("Debt updated successfully!");
+                analyticsService.trackDebtUpdated(formData.category, amount);
 
                 // Create net worth snapshot after successful update
                 await createSnapshotFromCurrentData(currentUser.id);
@@ -163,6 +165,11 @@ const DebtForm: React.FC<DebtFormProps> = ({
                 }
 
                 toast.success("Debt added successfully!");
+                analyticsService.trackDebtAdded(
+                    formData.category,
+                    amount,
+                    interestRate
+                );
 
                 // Create net worth snapshot after successful creation
                 await createSnapshotFromCurrentData(currentUser.id);

@@ -9,6 +9,7 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, googleProvider, db } from "../lib/firebase";
 import { User } from "../types";
 import toast from "react-hot-toast";
+import { analyticsService } from "../services/analyticsService";
 
 interface AuthContextType {
     currentUser: User | null;
@@ -54,9 +55,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             }
 
             toast.success("Successfully signed in!");
+            analyticsService.trackLogin();
         } catch (error) {
             console.error("Error signing in:", error);
             toast.error("Failed to sign in. Please try again.");
+            analyticsService.trackError(
+                "auth_error",
+                error instanceof Error ? error.message : "Unknown sign in error"
+            );
         }
     };
 
@@ -64,9 +70,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
             await signOut(auth);
             toast.success("Successfully signed out!");
+            analyticsService.trackLogout();
         } catch (error) {
             console.error("Error signing out:", error);
             toast.error("Failed to sign out.");
+            analyticsService.trackError(
+                "auth_error",
+                error instanceof Error
+                    ? error.message
+                    : "Unknown sign out error"
+            );
         }
     };
 

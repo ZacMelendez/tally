@@ -18,6 +18,7 @@ import {
 import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { Asset, Debt, NetWorthSnapshot } from "../types";
+import { analyticsService } from "../services/analyticsService";
 import AssetForm from "./AssetForm";
 import DebtForm from "./DebtForm";
 import AssetManagementModal from "./AssetManagementModal";
@@ -38,6 +39,11 @@ const Dashboard: React.FC = () => {
     const [showAssetManagement, setShowAssetManagement] = useState(false);
     const [showDebtManagement, setShowDebtManagement] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    // Track page view
+    useEffect(() => {
+        analyticsService.trackPageView("Dashboard");
+    }, []);
 
     useEffect(() => {
         if (!currentUser) return;

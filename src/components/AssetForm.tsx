@@ -19,6 +19,7 @@ import {
 } from "../services/valueHistoryService";
 import { createSnapshotFromCurrentData } from "../services/netWorthService";
 import toast from "react-hot-toast";
+import { analyticsService } from "../services/analyticsService";
 import { cn } from "@/lib/utils";
 
 interface AssetFormProps {
@@ -115,6 +116,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
                 }
 
                 toast.success("Asset updated successfully!");
+                analyticsService.trackAssetUpdated(formData.category, value);
 
                 // Create net worth snapshot after successful update
                 await createSnapshotFromCurrentData(currentUser.id);
@@ -140,6 +142,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
                 }
 
                 toast.success("Asset added successfully!");
+                analyticsService.trackAssetAdded(formData.category, value);
 
                 // Create net worth snapshot after successful creation
                 await createSnapshotFromCurrentData(currentUser.id);

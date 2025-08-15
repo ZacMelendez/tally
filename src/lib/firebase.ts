@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-
-console.log(import.meta.env);
+import { getPerformance } from "firebase/performance";
+import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
     apiKey: import.meta.env["VITE_FIREBASE_API_KEY"],
@@ -18,6 +18,10 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Initialize Performance Monitoring and Analytics
+export const perf = getPerformance(app);
+export const analytics = getAnalytics(app);
 
 // Configure Google provider
 googleProvider.setCustomParameters({
