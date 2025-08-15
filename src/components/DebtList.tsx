@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface DebtListProps {
     debts: Debt[];
@@ -29,23 +30,26 @@ const DebtList: React.FC<DebtListProps> = ({ debts }) => {
     const [viewingHistoryDebt, setViewingHistoryDebt] = useState<Debt | null>(
         null
     );
+    const [debtToDelete, setDebtToDelete] = useState<Debt | null>(null);
 
-    const handleDelete = async (debt: Debt) => {
+    const handleDeleteClick = (debt: Debt) => {
         if (!checkRateLimit("delete-item")) return;
+        setDebtToDelete(debt);
+    };
 
-        if (!confirm(`Are you sure you want to delete "${debt.name}"?`)) {
-            return;
-        }
+    const handleDeleteConfirm = async () => {
+        if (!debtToDelete) return;
 
-        setDeletingId(debt.id);
+        setDeletingId(debtToDelete.id);
         try {
-            await deleteDoc(doc(db, "debts", debt.id));
+            await deleteDoc(doc(db, "debts", debtToDelete.id));
             toast.success("Debt deleted successfully!");
         } catch (error) {
             console.error("Error deleting debt:", error);
             toast.error("Failed to delete debt. Please try again.");
         } finally {
             setDeletingId(null);
+            setDebtToDelete(null);
         }
     };
 
@@ -194,7 +198,9 @@ const DebtList: React.FC<DebtListProps> = ({ debts }) => {
                                                 >
                                                     <Button
                                                         onClick={() =>
-                                                            handleDelete(debt)
+                                                            handleDeleteClick(
+                                                                debt
+                                                            )
                                                         }
                                                         disabled={
                                                             deletingId ===
@@ -261,6 +267,17 @@ const DebtList: React.FC<DebtListProps> = ({ debts }) => {
                     }}
                 />
             )}
+            <ConfirmationDialog
+                open={!!debtToDelete}
+                onClose={() => setDebtToDelete(null)}
+                onConfirm={handleDeleteConfirm}
+                title="Delete Debt"
+                description={`Are you sure you want to delete "${debtToDelete?.name}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                destructive={true}
+                loading={!!deletingId}
+            />
         </>
     );
 };

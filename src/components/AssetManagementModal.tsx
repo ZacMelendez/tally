@@ -18,6 +18,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface AssetManagementModalProps {
     assets: Asset[];
@@ -42,17 +43,19 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
     const [viewingHistoryAsset, setViewingHistoryAsset] =
         useState<Asset | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
 
-    const handleDelete = async (asset: Asset) => {
+    const handleDeleteClick = (asset: Asset) => {
         if (!checkRateLimit("delete-item")) return;
+        setAssetToDelete(asset);
+    };
 
-        if (!confirm(`Are you sure you want to delete "${asset.name}"?`)) {
-            return;
-        }
+    const handleDeleteConfirm = async () => {
+        if (!assetToDelete) return;
 
-        setDeletingId(asset.id);
+        setDeletingId(assetToDelete.id);
         try {
-            await deleteDoc(doc(db, "assets", asset.id));
+            await deleteDoc(doc(db, "assets", assetToDelete.id));
             toast.success("Asset deleted successfully!");
 
             // Create net worth snapshot after successful deletion
@@ -66,6 +69,7 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
             toast.error("Failed to delete asset. Please try again.");
         } finally {
             setDeletingId(null);
+            setAssetToDelete(null);
         }
     };
 
@@ -103,7 +107,7 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
     return (
         <>
             <Dialog open={open} onOpenChange={onClose}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden border-success/20 hover:border-success/40">
+                <DialogContent className="max-w-4xl max-h-[90vh] min-w-3/4 overflow-hidden border-success/20 hover:border-success/40">
                     <DialogHeader className="pb-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -131,6 +135,7 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
                             <Button
                                 onClick={() => setShowAssetForm(true)}
                                 className="gap-2"
+                                variant="outline"
                             >
                                 <Plus className="w-4 h-4" />
                                 Add Asset
@@ -138,7 +143,7 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
                         </div>
                     </DialogHeader>
 
-                    <div className="overflow-y-auto max-h-[calc(90vh-200px)]">
+                    <div className="flex-1 overflow-hidden">
                         {assets.length === 0 ? (
                             <motion.div
                                 initial={{ opacity: 0 }}
@@ -168,152 +173,276 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
                                 </Card>
                             </motion.div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b border-border">
-                                            <th className="text-left py-3 px-2 font-semibold">
-                                                Name
-                                            </th>
-                                            <th className="text-left py-3 px-2 font-semibold">
-                                                Category
-                                            </th>
-                                            <th className="text-right py-3 px-2 font-semibold">
-                                                Value
-                                            </th>
-                                            <th className="text-left py-3 px-2 font-semibold">
-                                                Description
-                                            </th>
-                                            <th className="text-center py-3 px-2 font-semibold">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <AnimatePresence>
-                                            {assets.map((asset, index) => (
-                                                <motion.tr
-                                                    key={asset.id}
-                                                    initial={{
-                                                        opacity: 0,
-                                                        y: 20,
-                                                    }}
-                                                    animate={{
-                                                        opacity: 1,
-                                                        y: 0,
-                                                    }}
-                                                    exit={{
-                                                        opacity: 0,
-                                                        y: -20,
-                                                    }}
-                                                    transition={{
-                                                        delay: index * 0.05,
-                                                    }}
-                                                    layout
-                                                    className="group border-b border-border/50 hover:bg-muted/30 transition-colors"
-                                                >
-                                                    <td className="py-3 px-2">
-                                                        <div className="font-medium truncate max-w-48">
-                                                            {asset.name}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-3 px-2">
-                                                        <Badge
-                                                            variant="secondary"
-                                                            className="text-success bg-success/10"
-                                                        >
-                                                            {getCategoryLabel(
-                                                                asset.category
-                                                            )}
-                                                        </Badge>
-                                                    </td>
-                                                    <td className="py-3 px-2 text-right">
-                                                        <span className="font-bold text-success">
-                                                            {formatCurrency(
-                                                                asset.value
-                                                            )}
-                                                        </span>
-                                                    </td>
-                                                    <td className="py-3 px-2">
-                                                        <div className="text-sm text-muted-foreground truncate max-w-48">
-                                                            {asset.description ||
-                                                                "-"}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-3 px-2">
-                                                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <motion.div
-                                                                whileTap={{
-                                                                    scale: 0.9,
+                            <>
+                                {/* Desktop Table View */}
+                                <div className="hidden md:block overflow-y-auto max-h-[calc(90vh-200px)]">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="sticky top-0 bg-background border-b border-border/50 z-10">
+                                                <tr>
+                                                    <th className="text-left py-2 px-2 font-semibold text-sm">
+                                                        Name
+                                                    </th>
+                                                    <th className="text-left py-2 px-2 font-semibold text-sm">
+                                                        Category
+                                                    </th>
+                                                    <th className="text-right py-2 px-2 font-semibold text-sm">
+                                                        Value
+                                                    </th>
+                                                    <th className="text-left py-2 px-2 font-semibold text-sm">
+                                                        Description
+                                                    </th>
+                                                    <th className="text-center py-2 px-2 font-semibold text-sm">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <AnimatePresence>
+                                                    {assets.map(
+                                                        (asset, index) => (
+                                                            <motion.tr
+                                                                key={asset.id}
+                                                                initial={{
+                                                                    opacity: 0,
+                                                                    y: 20,
                                                                 }}
-                                                            >
-                                                                <Button
-                                                                    onClick={() =>
-                                                                        setViewingHistoryAsset(
-                                                                            asset
-                                                                        )
-                                                                    }
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="p-2 h-8 w-8"
-                                                                    title="View value history"
-                                                                >
-                                                                    <BarChart3 className="w-4 h-4" />
-                                                                </Button>
-                                                            </motion.div>
-                                                            <motion.div
-                                                                whileTap={{
-                                                                    scale: 0.9,
+                                                                animate={{
+                                                                    opacity: 1,
+                                                                    y: 0,
                                                                 }}
-                                                            >
-                                                                <Button
-                                                                    onClick={() =>
-                                                                        setEditingAsset(
-                                                                            asset
-                                                                        )
-                                                                    }
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="p-2 h-8 w-8"
-                                                                >
-                                                                    <Edit className="w-4 h-4" />
-                                                                </Button>
-                                                            </motion.div>
-                                                            <motion.div
-                                                                whileTap={{
-                                                                    scale: 0.9,
+                                                                exit={{
+                                                                    opacity: 0,
+                                                                    y: -20,
                                                                 }}
+                                                                transition={{
+                                                                    delay:
+                                                                        index *
+                                                                        0.05,
+                                                                }}
+                                                                layout
+                                                                className="group border-b border-border/50 hover:bg-muted/30 transition-colors"
                                                             >
-                                                                <Button
-                                                                    onClick={() =>
-                                                                        handleDelete(
-                                                                            asset
-                                                                        )
-                                                                    }
-                                                                    disabled={
-                                                                        deletingId ===
-                                                                        asset.id
-                                                                    }
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="p-2 h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                <td className="py-2 px-2">
+                                                                    <div className="font-medium truncate max-w-48">
+                                                                        {
+                                                                            asset.name
+                                                                        }
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-2 px-2">
+                                                                    <Badge
+                                                                        variant="secondary"
+                                                                        className="text-success bg-success/10 text-xs px-2 py-0.5"
+                                                                    >
+                                                                        {getCategoryLabel(
+                                                                            asset.category
+                                                                        )}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td className="py-3 px-2 text-right">
+                                                                    <span className="font-bold text-success">
+                                                                        {formatCurrency(
+                                                                            asset.value
+                                                                        )}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="py-2 px-2">
+                                                                    <div className="text-sm text-muted-foreground truncate max-w-48">
+                                                                        {asset.description ||
+                                                                            "-"}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-2 px-2">
+                                                                    <div className="flex items-center justify-center gap-1">
+                                                                        <motion.div
+                                                                            whileTap={{
+                                                                                scale: 0.9,
+                                                                            }}
+                                                                        >
+                                                                            <Button
+                                                                                onClick={() =>
+                                                                                    setViewingHistoryAsset(
+                                                                                        asset
+                                                                                    )
+                                                                                }
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="p-1.5 h-7 w-7"
+                                                                                title="View value history"
+                                                                            >
+                                                                                <BarChart3 className="w-3.5 h-3.5" />
+                                                                            </Button>
+                                                                        </motion.div>
+                                                                        <motion.div
+                                                                            whileTap={{
+                                                                                scale: 0.9,
+                                                                            }}
+                                                                        >
+                                                                            <Button
+                                                                                onClick={() =>
+                                                                                    setEditingAsset(
+                                                                                        asset
+                                                                                    )
+                                                                                }
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="p-1.5 h-7 w-7"
+                                                                            >
+                                                                                <Edit className="w-3.5 h-3.5" />
+                                                                            </Button>
+                                                                        </motion.div>
+                                                                        <motion.div
+                                                                            whileTap={{
+                                                                                scale: 0.9,
+                                                                            }}
+                                                                        >
+                                                                            <Button
+                                                                                onClick={() =>
+                                                                                    handleDeleteClick(
+                                                                                        asset
+                                                                                    )
+                                                                                }
+                                                                                disabled={
+                                                                                    deletingId ===
+                                                                                    asset.id
+                                                                                }
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="p-1.5 h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                            >
+                                                                                {deletingId ===
+                                                                                asset.id ? (
+                                                                                    <div className="loading-spinner w-3.5 h-3.5" />
+                                                                                ) : (
+                                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                                )}
+                                                                            </Button>
+                                                                        </motion.div>
+                                                                    </div>
+                                                                </td>
+                                                            </motion.tr>
+                                                        )
+                                                    )}
+                                                </AnimatePresence>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* Mobile Card View */}
+                                <div className="md:hidden space-y-2 overflow-y-auto max-h-[calc(90vh-200px)] p-1">
+                                    <AnimatePresence>
+                                        {assets.map((asset, index) => (
+                                            <motion.div
+                                                key={asset.id}
+                                                initial={{
+                                                    opacity: 0,
+                                                    y: 20,
+                                                }}
+                                                animate={{
+                                                    opacity: 1,
+                                                    y: 0,
+                                                }}
+                                                exit={{
+                                                    opacity: 0,
+                                                    y: -20,
+                                                }}
+                                                transition={{
+                                                    delay: index * 0.05,
+                                                }}
+                                                layout
+                                            >
+                                                <Card className="border-success/20 hover:border-success/40 transition-colors p-0">
+                                                    <CardContent className="p-3">
+                                                        <div className="flex items-start justify-between mb-2">
+                                                            <div className="flex-1 min-w-0">
+                                                                <h3 className="font-medium text-base truncate">
+                                                                    {asset.name}
+                                                                </h3>
+                                                                <Badge
+                                                                    variant="secondary"
+                                                                    className="text-success bg-success/10 mt-1 text-xs px-2 py-0.5"
                                                                 >
-                                                                    {deletingId ===
-                                                                    asset.id ? (
-                                                                        <div className="loading-spinner w-4 h-4" />
-                                                                    ) : (
-                                                                        <Trash2 className="w-4 h-4" />
+                                                                    {getCategoryLabel(
+                                                                        asset.category
                                                                     )}
-                                                                </Button>
-                                                            </motion.div>
+                                                                </Badge>
+                                                            </div>
+                                                            <div className="text-right ml-3">
+                                                                <div className="font-bold text-success text-base">
+                                                                    {formatCurrency(
+                                                                        asset.value
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    </td>
-                                                </motion.tr>
-                                            ))}
-                                        </AnimatePresence>
-                                    </tbody>
-                                </table>
-                            </div>
+
+                                                        {asset.description && (
+                                                            <p className="text-sm text-muted-foreground mb-2">
+                                                                {
+                                                                    asset.description
+                                                                }
+                                                            </p>
+                                                        )}
+
+                                                        <div className="flex items-center gap-1 pt-2 border-t border-border/50">
+                                                            <Button
+                                                                onClick={() =>
+                                                                    setViewingHistoryAsset(
+                                                                        asset
+                                                                    )
+                                                                }
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="flex-1 gap-1 h-8 text-xs"
+                                                            >
+                                                                <BarChart3 className="w-4 h-4" />
+                                                                History
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() =>
+                                                                    setEditingAsset(
+                                                                        asset
+                                                                    )
+                                                                }
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="flex-1 gap-1 h-8 text-xs"
+                                                            >
+                                                                <Edit className="w-4 h-4" />
+                                                                Edit
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() =>
+                                                                    handleDeleteClick(
+                                                                        asset
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    deletingId ===
+                                                                    asset.id
+                                                                }
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="flex-1 gap-1 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            >
+                                                                {deletingId ===
+                                                                asset.id ? (
+                                                                    <div className="loading-spinner w-4 h-4" />
+                                                                ) : (
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                )}
+                                                                Delete
+                                                            </Button>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                </div>
+                            </>
                         )}
                     </div>
                 </DialogContent>
@@ -339,6 +468,17 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
                     onValueUpdate={() => onRefresh()}
                 />
             )}
+            <ConfirmationDialog
+                open={!!assetToDelete}
+                onClose={() => setAssetToDelete(null)}
+                onConfirm={handleDeleteConfirm}
+                title="Delete Asset"
+                description={`Are you sure you want to delete "${assetToDelete?.name}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                destructive={true}
+                loading={!!deletingId}
+            />
         </>
     );
 };

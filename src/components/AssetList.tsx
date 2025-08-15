@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface AssetListProps {
     assets: Asset[];
@@ -28,23 +29,26 @@ const AssetList: React.FC<AssetListProps> = ({ assets }) => {
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [viewingHistoryAsset, setViewingHistoryAsset] =
         useState<Asset | null>(null);
+    const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
 
-    const handleDelete = async (asset: Asset) => {
+    const handleDeleteClick = (asset: Asset) => {
         if (!checkRateLimit("delete-item")) return;
+        setAssetToDelete(asset);
+    };
 
-        if (!confirm(`Are you sure you want to delete "${asset.name}"?`)) {
-            return;
-        }
+    const handleDeleteConfirm = async () => {
+        if (!assetToDelete) return;
 
-        setDeletingId(asset.id);
+        setDeletingId(assetToDelete.id);
         try {
-            await deleteDoc(doc(db, "assets", asset.id));
+            await deleteDoc(doc(db, "assets", assetToDelete.id));
             toast.success("Asset deleted successfully!");
         } catch (error) {
             console.error("Error deleting asset:", error);
             toast.error("Failed to delete asset. Please try again.");
         } finally {
             setDeletingId(null);
+            setAssetToDelete(null);
         }
     };
 
@@ -191,7 +195,9 @@ const AssetList: React.FC<AssetListProps> = ({ assets }) => {
                                                 >
                                                     <Button
                                                         onClick={() =>
-                                                            handleDelete(asset)
+                                                            handleDeleteClick(
+                                                                asset
+                                                            )
                                                         }
                                                         disabled={
                                                             deletingId ===
@@ -258,6 +264,17 @@ const AssetList: React.FC<AssetListProps> = ({ assets }) => {
                     }}
                 />
             )}
+            <ConfirmationDialog
+                open={!!assetToDelete}
+                onClose={() => setAssetToDelete(null)}
+                onConfirm={handleDeleteConfirm}
+                title="Delete Asset"
+                description={`Are you sure you want to delete "${assetToDelete?.name}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                destructive={true}
+                loading={!!deletingId}
+            />
         </>
     );
 };
