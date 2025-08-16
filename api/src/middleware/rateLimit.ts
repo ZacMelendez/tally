@@ -111,6 +111,10 @@ export async function getRateLimitInfo(
             });
         }
 
+        console.log({
+            headers: request.headers,
+        });
+
         const identifier = `user:${userId}`;
 
         // Check current rate limit status (this will consume one request)

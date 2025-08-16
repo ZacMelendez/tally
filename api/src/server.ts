@@ -10,7 +10,7 @@ dotenv.config();
 
 const fastify = Fastify({
     logger: {
-        level: process.env.LOG_LEVEL || "info",
+        level: process.env.LOG_LEVEL || "trace",
     },
 });
 
@@ -33,9 +33,12 @@ for (const envVar of requiredEnvVars) {
 async function buildApp() {
     // Register CORS
     await fastify.register(cors, {
-        origin: process.env.FRONTEND_URL || true,
+        origin: process.env.FRONTEND_URLS
+            ? process.env.FRONTEND_URLS.split(",")
+            : true,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        logLevel: "trace",
     });
 
     // Health check endpoint

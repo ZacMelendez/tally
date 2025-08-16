@@ -197,7 +197,6 @@ class RateLimitMonitorService {
      */
     private handleLowSeverityIncident(incident: RateLimitIncident) {
         console.log("Low severity rate limiting issue:", incident);
-        // No immediate action needed, just log
     }
 
     /**

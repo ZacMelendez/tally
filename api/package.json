@@ -8,6 +8,7 @@
         "build": "bunx tsc",
         "build:docker": "bunx tsc && docker build -t net-worth-api .",
         "run:docker": "docker run -p 3001:3001 --env-file ./.env net-worth-api",
+        "docker:build": "docker buildx build --platform linux/amd64 -t ghcr.io/zacmelendez/net-worth-api:latest --push .",
         "start": "node dist/server.js",
         "clean": "rm -rf dist",
         "db:init": "tsx scripts/init-rate-limit-db.ts init",

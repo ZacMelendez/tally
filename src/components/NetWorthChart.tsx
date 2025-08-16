@@ -61,20 +61,17 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
                 new Date(a.createdAt).getTime() -
                 new Date(b.createdAt).getTime()
         )
-        .map((snapshot) => {
-            console.log({ snapshot });
-            return {
-                date: new Date(snapshot.createdAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                }),
-                netWorth: snapshot.netWorth,
-                assets: snapshot.totalAssets,
-                debts: snapshot.totalDebts,
-                fullDate: snapshot.createdAt,
-            };
-        });
+        .map((snapshot) => ({
+            date: new Date(snapshot.createdAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+            }),
+            netWorth: snapshot.netWorth,
+            assets: snapshot.totalAssets,
+            debts: snapshot.totalDebts,
+            fullDate: snapshot.createdAt,
+        }));
 
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
