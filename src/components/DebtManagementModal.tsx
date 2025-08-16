@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Edit, Trash2, CreditCard, BarChart3 } from "lucide-react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -141,37 +140,28 @@ const DebtManagementModal: React.FC<DebtManagementModalProps> = ({
 
                     <div className="flex-1 overflow-hidden">
                         {debts.length === 0 ? (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                            >
-                                <Card className="border-dashed">
-                                    <CardContent className="text-center py-12">
-                                        <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                                        <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                                            No Debts Yet
-                                        </h3>
-                                        <p className="text-muted-foreground mb-4">
-                                            Add debts to get a complete picture
-                                            of your net worth
-                                        </p>
-                                        <Button
-                                            onClick={() =>
-                                                setShowDebtForm(true)
-                                            }
-                                            variant="destructive"
-                                            className="gap-2"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                            Add Your First Debt
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
+                            <Card className="border-dashed">
+                                <CardContent className="text-center py-12">
+                                    <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                    <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                                        No Debts Yet
+                                    </h3>
+                                    <p className="text-muted-foreground mb-4">
+                                        Add debts to get a complete picture of
+                                        your net worth
+                                    </p>
+                                    <Button
+                                        onClick={() => setShowDebtForm(true)}
+                                        variant="destructive"
+                                        className="gap-2"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add Your First Debt
+                                    </Button>
+                                </CardContent>
+                            </Card>
                         ) : (
                             <>
-                                {/* Desktop Table View */}
                                 <div className="hidden md:block overflow-y-auto max-h-[calc(90vh-200px)]">
                                     <div className="overflow-x-auto">
                                         <table className="w-full">
@@ -198,267 +188,202 @@ const DebtManagementModal: React.FC<DebtManagementModalProps> = ({
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <AnimatePresence>
-                                                    {debts.map(
-                                                        (debt, index) => (
-                                                            <motion.tr
-                                                                key={debt.id}
-                                                                initial={{
-                                                                    opacity: 0,
-                                                                    y: 20,
-                                                                }}
-                                                                animate={{
-                                                                    opacity: 1,
-                                                                    y: 0,
-                                                                }}
-                                                                exit={{
-                                                                    opacity: 0,
-                                                                    y: -20,
-                                                                }}
-                                                                transition={{
-                                                                    delay:
-                                                                        index *
-                                                                        0.05,
-                                                                }}
-                                                                layout
-                                                                className="group border-b border-border/50 hover:bg-muted/30 transition-colors"
+                                                {debts.map((debt) => (
+                                                    <tr
+                                                        key={debt.id}
+                                                        className="group border-b border-border/50 hover:bg-muted/30 transition-colors"
+                                                    >
+                                                        <td className="py-3 px-2">
+                                                            <div className="font-medium truncate max-w-48">
+                                                                {debt.name}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 px-2">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-destructive bg-destructive/10"
                                                             >
-                                                                <td className="py-3 px-2">
-                                                                    <div className="font-medium truncate max-w-48">
-                                                                        {
-                                                                            debt.name
-                                                                        }
-                                                                    </div>
-                                                                </td>
-                                                                <td className="py-3 px-2">
-                                                                    <Badge
-                                                                        variant="secondary"
-                                                                        className="text-destructive bg-destructive/10"
-                                                                    >
-                                                                        {getCategoryLabel(
-                                                                            debt.category
-                                                                        )}
-                                                                    </Badge>
-                                                                </td>
-                                                                <td className="py-3 px-2 text-right">
-                                                                    <span className="font-bold text-destructive">
-                                                                        {formatCurrency(
-                                                                            debt.amount
-                                                                        )}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="py-3 px-2 text-center">
-                                                                    <div className="text-sm text-muted-foreground">
-                                                                        {debt.interestRate
-                                                                            ? `${debt.interestRate}%`
-                                                                            : "-"}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="py-3 px-2">
-                                                                    <div className="text-sm text-muted-foreground truncate max-w-48">
-                                                                        {debt.description ||
-                                                                            "-"}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="py-3 px-2">
-                                                                    <div className="flex items-center justify-center gap-1">
-                                                                        <motion.div
-                                                                            whileTap={{
-                                                                                scale: 0.9,
-                                                                            }}
-                                                                        >
-                                                                            <Button
-                                                                                onClick={() =>
-                                                                                    setViewingHistoryDebt(
-                                                                                        debt
-                                                                                    )
-                                                                                }
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="p-2 h-8 w-8"
-                                                                                title="View value history"
-                                                                            >
-                                                                                <BarChart3 className="w-4 h-4" />
-                                                                            </Button>
-                                                                        </motion.div>
-                                                                        <motion.div
-                                                                            whileTap={{
-                                                                                scale: 0.9,
-                                                                            }}
-                                                                        >
-                                                                            <Button
-                                                                                onClick={() =>
-                                                                                    setEditingDebt(
-                                                                                        debt
-                                                                                    )
-                                                                                }
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="p-2 h-8 w-8"
-                                                                            >
-                                                                                <Edit className="w-4 h-4" />
-                                                                            </Button>
-                                                                        </motion.div>
-                                                                        <motion.div
-                                                                            whileTap={{
-                                                                                scale: 0.9,
-                                                                            }}
-                                                                        >
-                                                                            <Button
-                                                                                onClick={() =>
-                                                                                    handleDeleteClick(
-                                                                                        debt
-                                                                                    )
-                                                                                }
-                                                                                disabled={
-                                                                                    deletingId ===
-                                                                                    debt.id
-                                                                                }
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="p-2 h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                                            >
-                                                                                {deletingId ===
-                                                                                debt.id ? (
-                                                                                    <div className="loading-spinner w-4 h-4" />
-                                                                                ) : (
-                                                                                    <Trash2 className="w-4 h-4" />
-                                                                                )}
-                                                                            </Button>
-                                                                        </motion.div>
-                                                                    </div>
-                                                                </td>
-                                                            </motion.tr>
-                                                        )
-                                                    )}
-                                                </AnimatePresence>
+                                                                {getCategoryLabel(
+                                                                    debt.category
+                                                                )}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="py-3 px-2 text-right">
+                                                            <span className="font-bold text-destructive">
+                                                                {formatCurrency(
+                                                                    debt.amount
+                                                                )}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-2 text-center">
+                                                            <div className="text-sm text-muted-foreground">
+                                                                {debt.interestRate
+                                                                    ? `${debt.interestRate}%`
+                                                                    : "-"}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 px-2">
+                                                            <div className="text-sm text-muted-foreground truncate max-w-48">
+                                                                {debt.description ||
+                                                                    "-"}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 px-2">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <Button
+                                                                    onClick={() =>
+                                                                        setViewingHistoryDebt(
+                                                                            debt
+                                                                        )
+                                                                    }
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="p-2 h-8 w-8"
+                                                                    title="View value history"
+                                                                >
+                                                                    <BarChart3 className="w-4 h-4" />
+                                                                </Button>
+
+                                                                <Button
+                                                                    onClick={() =>
+                                                                        setEditingDebt(
+                                                                            debt
+                                                                        )
+                                                                    }
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="p-2 h-8 w-8"
+                                                                >
+                                                                    <Edit className="w-4 h-4" />
+                                                                </Button>
+
+                                                                <Button
+                                                                    onClick={() =>
+                                                                        handleDeleteClick(
+                                                                            debt
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        deletingId ===
+                                                                        debt.id
+                                                                    }
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="p-2 h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                >
+                                                                    {deletingId ===
+                                                                    debt.id ? (
+                                                                        <div className="loading-spinner w-4 h-4" />
+                                                                    ) : (
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    )}
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
 
-                                {/* Mobile Card View */}
                                 <div className="md:hidden space-y-2 overflow-y-auto max-h-[calc(90vh-200px)] p-1">
-                                    <AnimatePresence>
-                                        {debts.map((debt, index) => (
-                                            <motion.div
-                                                key={debt.id}
-                                                initial={{
-                                                    opacity: 0,
-                                                    y: 20,
-                                                }}
-                                                animate={{
-                                                    opacity: 1,
-                                                    y: 0,
-                                                }}
-                                                exit={{
-                                                    opacity: 0,
-                                                    y: -20,
-                                                }}
-                                                transition={{
-                                                    delay: index * 0.05,
-                                                }}
-                                                layout
-                                            >
-                                                <Card className="border-destructive/20 hover:border-destructive/40 transition-colors p-0">
-                                                    <CardContent className="p-3">
-                                                        <div className="flex items-start justify-between mb-3">
-                                                            <div className="flex-1 min-w-0">
-                                                                <h3 className="font-medium text-lg truncate">
-                                                                    {debt.name}
-                                                                </h3>
-                                                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                                    <Badge
-                                                                        variant="secondary"
-                                                                        className="text-destructive bg-destructive/10"
-                                                                    >
-                                                                        {getCategoryLabel(
-                                                                            debt.category
-                                                                        )}
-                                                                    </Badge>
-                                                                    {debt.interestRate && (
-                                                                        <span className="text-sm text-muted-foreground">
-                                                                            {
-                                                                                debt.interestRate
-                                                                            }
-                                                                            %
-                                                                            APR
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-right ml-4">
-                                                                <div className="font-bold text-destructive text-lg">
-                                                                    {formatCurrency(
-                                                                        debt.amount
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {debt.description && (
-                                                            <p className="text-sm text-muted-foreground mb-3">
-                                                                {
-                                                                    debt.description
-                                                                }
-                                                            </p>
-                                                        )}
-
-                                                        <div className="flex items-center gap-2 pt-2 border-t border-border/50">
-                                                            <Button
-                                                                onClick={() =>
-                                                                    setViewingHistoryDebt(
-                                                                        debt
-                                                                    )
-                                                                }
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="flex-1 gap-2"
+                                    {debts.map((debt) => (
+                                        <Card
+                                            key={debt.id}
+                                            className="border-destructive/20 hover:border-destructive/40 transition-colors p-0"
+                                        >
+                                            <CardContent className="p-3">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-medium text-lg truncate">
+                                                            {debt.name}
+                                                        </h3>
+                                                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-destructive bg-destructive/10"
                                                             >
-                                                                <BarChart3 className="w-4 h-4" />
-                                                                History
-                                                            </Button>
-                                                            <Button
-                                                                onClick={() =>
-                                                                    setEditingDebt(
-                                                                        debt
-                                                                    )
-                                                                }
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="flex-1 gap-2"
-                                                            >
-                                                                <Edit className="w-4 h-4" />
-                                                                Edit
-                                                            </Button>
-                                                            <Button
-                                                                onClick={() =>
-                                                                    handleDeleteClick(
-                                                                        debt
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    deletingId ===
-                                                                    debt.id
-                                                                }
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="flex-1 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                            >
-                                                                {deletingId ===
-                                                                debt.id ? (
-                                                                    <div className="loading-spinner w-4 h-4" />
-                                                                ) : (
-                                                                    <Trash2 className="w-4 h-4" />
+                                                                {getCategoryLabel(
+                                                                    debt.category
                                                                 )}
-                                                                Delete
-                                                            </Button>
+                                                            </Badge>
+                                                            {debt.interestRate && (
+                                                                <span className="text-sm text-muted-foreground">
+                                                                    {
+                                                                        debt.interestRate
+                                                                    }
+                                                                    % APR
+                                                                </span>
+                                                            )}
                                                         </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </motion.div>
-                                        ))}
-                                    </AnimatePresence>
+                                                    </div>
+                                                    <div className="text-right ml-4">
+                                                        <div className="font-bold text-destructive text-lg">
+                                                            {formatCurrency(
+                                                                debt.amount
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {debt.description && (
+                                                    <p className="text-sm text-muted-foreground mb-3">
+                                                        {debt.description}
+                                                    </p>
+                                                )}
+
+                                                <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                                                    <Button
+                                                        onClick={() =>
+                                                            setViewingHistoryDebt(
+                                                                debt
+                                                            )
+                                                        }
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="flex-1 gap-2"
+                                                    >
+                                                        <BarChart3 className="w-4 h-4" />
+                                                        History
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() =>
+                                                            setEditingDebt(debt)
+                                                        }
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="flex-1 gap-2"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                        Edit
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() =>
+                                                            handleDeleteClick(
+                                                                debt
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            deletingId ===
+                                                            debt.id
+                                                        }
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="flex-1 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    >
+                                                        {deletingId ===
+                                                        debt.id ? (
+                                                            <div className="loading-spinner w-4 h-4" />
+                                                        ) : (
+                                                            <Trash2 className="w-4 h-4" />
+                                                        )}
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
                                 </div>
                             </>
                         )}

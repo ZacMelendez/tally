@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import {
     Edit,
     Trash2,
@@ -94,158 +93,116 @@ const DebtList: React.FC<DebtListProps> = ({ debts }) => {
                 </CardHeader>
 
                 <CardContent className="space-y-4 pt-0">
-                    <AnimatePresence>
-                        {debts.map((debt, index) => (
-                            <motion.div
-                                key={debt.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ delay: index * 0.05 }}
-                                layout
-                            >
-                                <Card className="group hover:shadow-md transition-all duration-200">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <h3 className="font-semibold truncate">
-                                                        {debt.name}
-                                                    </h3>
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="text-destructive bg-destructive/10"
-                                                    >
-                                                        {getCategoryLabel(
-                                                            debt.category
-                                                        )}
-                                                    </Badge>
-                                                </div>
-                                                <p className="text-lg font-bold text-destructive">
-                                                    {formatCurrency(
-                                                        debt.amount
-                                                    )}
-                                                </p>
-                                                {debt.interestRate && (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {debt.interestRate}%
-                                                        interest
-                                                    </p>
+                    {debts.map((debt) => (
+                        <Card
+                            key={debt.id}
+                            className="group hover:shadow-md transition-all duration-200"
+                        >
+                            <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="font-semibold truncate">
+                                                {debt.name}
+                                            </h3>
+                                            <Badge
+                                                variant="secondary"
+                                                className="text-destructive bg-destructive/10"
+                                            >
+                                                {getCategoryLabel(
+                                                    debt.category
                                                 )}
-                                                {debt.description && (
-                                                    <p className="text-sm text-muted-foreground mt-1 truncate">
-                                                        {debt.description}
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {debt.url && (
-                                                    <motion.div
-                                                        whileTap={{
-                                                            scale: 0.9,
-                                                        }}
-                                                    >
-                                                        <Button
-                                                            onClick={() =>
-                                                                window.open(
-                                                                    debt.url,
-                                                                    "_blank",
-                                                                    "noopener,noreferrer"
-                                                                )
-                                                            }
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="p-2"
-                                                            title="Open account link"
-                                                        >
-                                                            <ExternalLink className="w-4 h-4" />
-                                                        </Button>
-                                                    </motion.div>
-                                                )}
-                                                <motion.div
-                                                    whileTap={{ scale: 0.9 }}
-                                                >
-                                                    <Button
-                                                        onClick={() =>
-                                                            setViewingHistoryDebt(
-                                                                debt
-                                                            )
-                                                        }
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="p-2"
-                                                        title="View value history"
-                                                    >
-                                                        <BarChart3 className="w-4 h-4" />
-                                                    </Button>
-                                                </motion.div>
-                                                <motion.div
-                                                    whileTap={{ scale: 0.9 }}
-                                                >
-                                                    <Button
-                                                        onClick={() =>
-                                                            setEditingDebt(debt)
-                                                        }
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="p-2"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </Button>
-                                                </motion.div>
-                                                <motion.div
-                                                    whileTap={{ scale: 0.9 }}
-                                                >
-                                                    <Button
-                                                        onClick={() =>
-                                                            handleDeleteClick(
-                                                                debt
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            deletingId ===
-                                                            debt.id
-                                                        }
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="p-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                    >
-                                                        {deletingId ===
-                                                        debt.id ? (
-                                                            <div className="loading-spinner w-4 h-4" />
-                                                        ) : (
-                                                            <Trash2 className="w-4 h-4" />
-                                                        )}
-                                                    </Button>
-                                                </motion.div>
-                                            </div>
+                                            </Badge>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
+                                        <p className="text-lg font-bold text-destructive">
+                                            {formatCurrency(debt.amount)}
+                                        </p>
+                                        {debt.interestRate && (
+                                            <p className="text-sm text-muted-foreground">
+                                                {debt.interestRate}% interest
+                                            </p>
+                                        )}
+                                        {debt.description && (
+                                            <p className="text-sm text-muted-foreground mt-1 truncate">
+                                                {debt.description}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {debt.url && (
+                                            <Button
+                                                onClick={() =>
+                                                    window.open(
+                                                        debt.url,
+                                                        "_blank",
+                                                        "noopener,noreferrer"
+                                                    )
+                                                }
+                                                variant="ghost"
+                                                size="sm"
+                                                className="p-2"
+                                                title="Open account link"
+                                            >
+                                                <ExternalLink className="w-4 h-4" />
+                                            </Button>
+                                        )}
+
+                                        <Button
+                                            onClick={() =>
+                                                setViewingHistoryDebt(debt)
+                                            }
+                                            variant="ghost"
+                                            size="sm"
+                                            className="p-2"
+                                            title="View value history"
+                                        >
+                                            <BarChart3 className="w-4 h-4" />
+                                        </Button>
+
+                                        <Button
+                                            onClick={() => setEditingDebt(debt)}
+                                            variant="ghost"
+                                            size="sm"
+                                            className="p-2"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </Button>
+
+                                        <Button
+                                            onClick={() =>
+                                                handleDeleteClick(debt)
+                                            }
+                                            disabled={deletingId === debt.id}
+                                            variant="ghost"
+                                            size="sm"
+                                            className="p-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        >
+                                            {deletingId === debt.id ? (
+                                                <div className="loading-spinner w-4 h-4" />
+                                            ) : (
+                                                <Trash2 className="w-4 h-4" />
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
 
                     {debts.length === 0 && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <Card className="border-dashed">
-                                <CardContent className="text-center py-12">
-                                    <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                                    <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                                        No Debts Yet
-                                    </h3>
-                                    <p className="text-muted-foreground">
-                                        Add debts to get a complete picture of
-                                        your net worth
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
+                        <Card className="border-dashed">
+                            <CardContent className="text-center py-12">
+                                <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                                    No Debts Yet
+                                </h3>
+                                <p className="text-muted-foreground">
+                                    Add debts to get a complete picture of your
+                                    net worth
+                                </p>
+                            </CardContent>
+                        </Card>
                     )}
                 </CardContent>
             </Card>

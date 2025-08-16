@@ -4,9 +4,9 @@ import { ValueHistoryService } from "../services/valueHistoryService";
 import { NetWorthService } from "../services/netWorthService";
 import { ApiResponse } from "../types";
 import {
-    debtAddRateLimit,
-    debtUpdateRateLimit,
+    debtRateLimit,
     deleteRateLimit,
+    globalRateLimit,
 } from "../middleware/rateLimit";
 
 export async function debtRoutes(fastify: FastifyInstance) {
@@ -15,120 +15,131 @@ export async function debtRoutes(fastify: FastifyInstance) {
     const netWorthService = new NetWorthService();
 
     // Get all debts for user
-    fastify.get("/", async (request, reply) => {
-        try {
-            const debts = await debtService.getDebts(request.userId!);
-
-            const response: ApiResponse = {
-                success: true,
-                data: debts,
-            };
-
-            return reply.send(response);
-        } catch (error) {
-            console.error("Error fetching debts:", error);
-            return reply.status(500).send({
-                success: false,
-                error: "Failed to fetch debts",
-            });
-        }
-    });
-
-    // Get specific debt
-    fastify.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
-        try {
-            const debt = await debtService.getDebt(
-                request.params.id,
-                request.userId!
-            );
-
-            if (!debt) {
-                return reply.status(404).send({
-                    success: false,
-                    error: "Debt not found",
-                });
-            }
-
-            const response: ApiResponse = {
-                success: true,
-                data: debt,
-            };
-
-            return reply.send(response);
-        } catch (error) {
-            if (error instanceof Error && error.message === "Unauthorized") {
-                return reply.status(403).send({
-                    success: false,
-                    error: "Unauthorized",
-                });
-            }
-
-            console.error("Error fetching debt:", error);
-            return reply.status(500).send({
-                success: false,
-                error: "Failed to fetch debt",
-            });
-        }
-    });
-
-    // Create new debt
-    fastify.post(
+    fastify.get(
         "/",
-        { preHandler: debtAddRateLimit },
+        {
+            preHandler: globalRateLimit,
+        },
         async (request, reply) => {
             try {
-                const debt = await debtService.createDebt(
-                    request.userId!,
-                    request.body as any
-                );
-
-                // Create initial history entry
-                try {
-                    await valueHistoryService.createInitialDebtHistory(
-                        debt.id,
-                        request.userId!,
-                        debt.amount
-                    );
-                } catch (historyError) {
-                    console.error(
-                        "Error creating initial debt history:",
-                        historyError
-                    );
-                }
-
-                // Create net worth snapshot
-                try {
-                    await netWorthService.createSnapshotFromCurrentData(
-                        request.userId!
-                    );
-                } catch (snapshotError) {
-                    console.error(
-                        "Error creating net worth snapshot:",
-                        snapshotError
-                    );
-                }
+                const debts = await debtService.getDebts(request.userId!);
 
                 const response: ApiResponse = {
                     success: true,
-                    data: debt,
-                    message: "Debt created successfully",
+                    data: debts,
                 };
 
-                return reply.status(201).send(response);
+                return reply.send(response);
             } catch (error) {
-                console.error("Error creating debt:", error);
+                console.error("Error fetching debts:", error);
                 return reply.status(500).send({
                     success: false,
-                    error: "Failed to create debt",
+                    error: "Failed to fetch debts",
                 });
             }
         }
     );
 
+    // Get specific debt
+    fastify.get<{ Params: { id: string } }>(
+        "/:id",
+        {
+            preHandler: globalRateLimit,
+        },
+        async (request, reply) => {
+            try {
+                const debt = await debtService.getDebt(
+                    request.params.id,
+                    request.userId!
+                );
+
+                if (!debt) {
+                    return reply.status(404).send({
+                        success: false,
+                        error: "Debt not found",
+                    });
+                }
+
+                const response: ApiResponse = {
+                    success: true,
+                    data: debt,
+                };
+
+                return reply.send(response);
+            } catch (error) {
+                if (
+                    error instanceof Error &&
+                    error.message === "Unauthorized"
+                ) {
+                    return reply.status(403).send({
+                        success: false,
+                        error: "Unauthorized",
+                    });
+                }
+
+                console.error("Error fetching debt:", error);
+                return reply.status(500).send({
+                    success: false,
+                    error: "Failed to fetch debt",
+                });
+            }
+        }
+    );
+
+    // Create new debt
+    fastify.post("/", { preHandler: debtRateLimit }, async (request, reply) => {
+        try {
+            const debt = await debtService.createDebt(
+                request.userId!,
+                request.body as any
+            );
+
+            // Create initial history entry
+            try {
+                await valueHistoryService.createInitialDebtHistory(
+                    debt.id,
+                    request.userId!,
+                    debt.amount
+                );
+            } catch (historyError) {
+                console.error(
+                    "Error creating initial debt history:",
+                    historyError
+                );
+            }
+
+            // Create net worth snapshot
+            try {
+                await netWorthService.createSnapshotFromCurrentData(
+                    request.userId!
+                );
+            } catch (snapshotError) {
+                console.error(
+                    "Error creating net worth snapshot:",
+                    snapshotError
+                );
+            }
+
+            const response: ApiResponse = {
+                success: true,
+                data: debt,
+                message: "Debt created successfully",
+            };
+
+            return reply.status(201).send(response);
+        } catch (error) {
+            console.error("Error creating debt:", error);
+            return reply.status(500).send({
+                success: false,
+                error: "Failed to create debt",
+            });
+        }
+    });
+
     // Update debt
     fastify.put<{ Params: { id: string } }>(
         "/:id",
-        { preHandler: debtUpdateRateLimit },
+        { preHandler: debtRateLimit },
         async (request, reply) => {
             try {
                 const debt = await debtService.updateDebt(
@@ -249,35 +260,44 @@ export async function debtRoutes(fastify: FastifyInstance) {
     fastify.get<{
         Params: { id: string };
         Querystring: { limit?: string };
-    }>("/:id/history", async (request, reply) => {
-        try {
-            const limit = request.query.limit
-                ? parseInt(request.query.limit)
-                : undefined;
-            const history = await valueHistoryService.getDebtValueHistory(
-                request.params.id,
-                request.userId!,
-                limit
-            );
+    }>(
+        "/:id/history",
+        {
+            preHandler: globalRateLimit,
+        },
+        async (request, reply) => {
+            try {
+                const limit = request.query.limit
+                    ? parseInt(request.query.limit)
+                    : undefined;
+                const history = await valueHistoryService.getDebtValueHistory(
+                    request.params.id,
+                    request.userId!,
+                    limit
+                );
 
-            const response: ApiResponse = {
-                success: true,
-                data: history,
-            };
+                const response: ApiResponse = {
+                    success: true,
+                    data: history,
+                };
 
-            return reply.send(response);
-        } catch (error) {
-            console.error("Error fetching debt history:", error);
-            return reply.status(500).send({
-                success: false,
-                error: "Failed to fetch debt history",
-            });
+                return reply.send(response);
+            } catch (error) {
+                console.error("Error fetching debt history:", error);
+                return reply.status(500).send({
+                    success: false,
+                    error: "Failed to fetch debt history",
+                });
+            }
         }
-    });
+    );
 
     // Add value history entry
     fastify.post<{ Params: { id: string } }>(
         "/:id/history",
+        {
+            preHandler: debtRateLimit,
+        },
         async (request, reply) => {
             try {
                 const history = await valueHistoryService.addDebtValueHistory(

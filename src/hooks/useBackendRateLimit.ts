@@ -66,26 +66,9 @@ export const useBackendRateLimit = (): UseBackendRateLimitReturn => {
                     setRateLimitInfo(info);
                 }
 
-                // Warn if approaching limit
-                if (quota.remaining <= 2) {
-                    const timeUntilReset =
-                        backendRateLimitService.getTimeUntilReset(
-                            quota.resetTime
-                        );
-                    toast.warning(
-                        `Rate limit warning: ${
-                            quota.remaining
-                        } ${action.replace(
-                            "-",
-                            " "
-                        )} requests remaining. Resets in ${timeUntilReset}.`
-                    );
-                }
-
                 return true;
             } catch (error) {
                 console.error("Rate limit check error:", error);
-                // In case of error, allow the request and let the backend handle it
                 return true;
             } finally {
                 setIsLoading(false);

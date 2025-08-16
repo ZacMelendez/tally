@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Edit, Trash2, TrendingUp, BarChart3 } from "lucide-react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -145,33 +144,25 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
 
                     <div className="flex-1 overflow-hidden">
                         {assets.length === 0 ? (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                            >
-                                <Card className="border-dashed">
-                                    <CardContent className="text-center py-12">
-                                        <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                                        <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                                            No Assets Yet
-                                        </h3>
-                                        <p className="text-muted-foreground mb-4">
-                                            Add your first asset to start
-                                            tracking your net worth!
-                                        </p>
-                                        <Button
-                                            onClick={() =>
-                                                setShowAssetForm(true)
-                                            }
-                                            className="gap-2"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                            Add Your First Asset
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
+                            <Card className="border-dashed">
+                                <CardContent className="text-center py-12">
+                                    <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                    <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                                        No Assets Yet
+                                    </h3>
+                                    <p className="text-muted-foreground mb-4">
+                                        Add your first asset to start tracking
+                                        your net worth!
+                                    </p>
+                                    <Button
+                                        onClick={() => setShowAssetForm(true)}
+                                        className="gap-2"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add Your First Asset
+                                    </Button>
+                                </CardContent>
+                            </Card>
                         ) : (
                             <>
                                 {/* Desktop Table View */}
@@ -198,133 +189,93 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <AnimatePresence>
-                                                    {assets.map(
-                                                        (asset, index) => (
-                                                            <motion.tr
-                                                                key={asset.id}
-                                                                initial={{
-                                                                    opacity: 0,
-                                                                    y: 20,
-                                                                }}
-                                                                animate={{
-                                                                    opacity: 1,
-                                                                    y: 0,
-                                                                }}
-                                                                exit={{
-                                                                    opacity: 0,
-                                                                    y: -20,
-                                                                }}
-                                                                transition={{
-                                                                    delay:
-                                                                        index *
-                                                                        0.05,
-                                                                }}
-                                                                layout
-                                                                className="group border-b border-border/50 hover:bg-muted/30 transition-colors"
+                                                {assets.map((asset) => (
+                                                    <tr
+                                                        key={asset.id}
+                                                        className="group border-b border-border/50 hover:bg-muted/30 transition-colors"
+                                                    >
+                                                        <td className="py-2 px-2">
+                                                            <div className="font-medium truncate max-w-48">
+                                                                {asset.name}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 px-2">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-success bg-success/10 text-xs px-2 py-0.5"
                                                             >
-                                                                <td className="py-2 px-2">
-                                                                    <div className="font-medium truncate max-w-48">
-                                                                        {
-                                                                            asset.name
-                                                                        }
-                                                                    </div>
-                                                                </td>
-                                                                <td className="py-2 px-2">
-                                                                    <Badge
-                                                                        variant="secondary"
-                                                                        className="text-success bg-success/10 text-xs px-2 py-0.5"
-                                                                    >
-                                                                        {getCategoryLabel(
-                                                                            asset.category
-                                                                        )}
-                                                                    </Badge>
-                                                                </td>
-                                                                <td className="py-3 px-2 text-right">
-                                                                    <span className="font-bold text-success">
-                                                                        {formatCurrency(
-                                                                            asset.value
-                                                                        )}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="py-2 px-2">
-                                                                    <div className="text-sm text-muted-foreground truncate max-w-48">
-                                                                        {asset.description ||
-                                                                            "-"}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="py-2 px-2">
-                                                                    <div className="flex items-center justify-center gap-1">
-                                                                        <motion.div
-                                                                            whileTap={{
-                                                                                scale: 0.9,
-                                                                            }}
-                                                                        >
-                                                                            <Button
-                                                                                onClick={() =>
-                                                                                    setViewingHistoryAsset(
-                                                                                        asset
-                                                                                    )
-                                                                                }
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="p-1.5 h-7 w-7"
-                                                                                title="View value history"
-                                                                            >
-                                                                                <BarChart3 className="w-3.5 h-3.5" />
-                                                                            </Button>
-                                                                        </motion.div>
-                                                                        <motion.div
-                                                                            whileTap={{
-                                                                                scale: 0.9,
-                                                                            }}
-                                                                        >
-                                                                            <Button
-                                                                                onClick={() =>
-                                                                                    setEditingAsset(
-                                                                                        asset
-                                                                                    )
-                                                                                }
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="p-1.5 h-7 w-7"
-                                                                            >
-                                                                                <Edit className="w-3.5 h-3.5" />
-                                                                            </Button>
-                                                                        </motion.div>
-                                                                        <motion.div
-                                                                            whileTap={{
-                                                                                scale: 0.9,
-                                                                            }}
-                                                                        >
-                                                                            <Button
-                                                                                onClick={() =>
-                                                                                    handleDeleteClick(
-                                                                                        asset
-                                                                                    )
-                                                                                }
-                                                                                disabled={
-                                                                                    deletingId ===
-                                                                                    asset.id
-                                                                                }
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="p-1.5 h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                                            >
-                                                                                {deletingId ===
-                                                                                asset.id ? (
-                                                                                    <div className="loading-spinner w-3.5 h-3.5" />
-                                                                                ) : (
-                                                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                                                )}
-                                                                            </Button>
-                                                                        </motion.div>
-                                                                    </div>
-                                                                </td>
-                                                            </motion.tr>
-                                                        )
-                                                    )}
-                                                </AnimatePresence>
+                                                                {getCategoryLabel(
+                                                                    asset.category
+                                                                )}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="py-3 px-2 text-right">
+                                                            <span className="font-bold text-success">
+                                                                {formatCurrency(
+                                                                    asset.value
+                                                                )}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-2 px-2">
+                                                            <div className="text-sm text-muted-foreground truncate max-w-48">
+                                                                {asset.description ||
+                                                                    "-"}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2 px-2">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <Button
+                                                                    onClick={() =>
+                                                                        setViewingHistoryAsset(
+                                                                            asset
+                                                                        )
+                                                                    }
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="p-1.5 h-7 w-7"
+                                                                    title="View value history"
+                                                                >
+                                                                    <BarChart3 className="w-3.5 h-3.5" />
+                                                                </Button>
+
+                                                                <Button
+                                                                    onClick={() =>
+                                                                        setEditingAsset(
+                                                                            asset
+                                                                        )
+                                                                    }
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="p-1.5 h-7 w-7"
+                                                                >
+                                                                    <Edit className="w-3.5 h-3.5" />
+                                                                </Button>
+
+                                                                <Button
+                                                                    onClick={() =>
+                                                                        handleDeleteClick(
+                                                                            asset
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        deletingId ===
+                                                                        asset.id
+                                                                    }
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="p-1.5 h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                >
+                                                                    {deletingId ===
+                                                                    asset.id ? (
+                                                                        <div className="loading-spinner w-3.5 h-3.5" />
+                                                                    ) : (
+                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                    )}
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
                                             </tbody>
                                         </table>
                                     </div>
@@ -332,115 +283,94 @@ const AssetManagementModal: React.FC<AssetManagementModalProps> = ({
 
                                 {/* Mobile Card View */}
                                 <div className="md:hidden space-y-2 overflow-y-auto max-h-[calc(90vh-200px)] p-1">
-                                    <AnimatePresence>
-                                        {assets.map((asset, index) => (
-                                            <motion.div
-                                                key={asset.id}
-                                                initial={{
-                                                    opacity: 0,
-                                                    y: 20,
-                                                }}
-                                                animate={{
-                                                    opacity: 1,
-                                                    y: 0,
-                                                }}
-                                                exit={{
-                                                    opacity: 0,
-                                                    y: -20,
-                                                }}
-                                                transition={{
-                                                    delay: index * 0.05,
-                                                }}
-                                                layout
-                                            >
-                                                <Card className="border-success/20 hover:border-success/40 transition-colors p-0">
-                                                    <CardContent className="p-3">
-                                                        <div className="flex items-start justify-between mb-2">
-                                                            <div className="flex-1 min-w-0">
-                                                                <h3 className="font-medium text-base truncate">
-                                                                    {asset.name}
-                                                                </h3>
-                                                                <Badge
-                                                                    variant="secondary"
-                                                                    className="text-success bg-success/10 mt-1 text-xs px-2 py-0.5"
-                                                                >
-                                                                    {getCategoryLabel(
-                                                                        asset.category
-                                                                    )}
-                                                                </Badge>
-                                                            </div>
-                                                            <div className="text-right ml-3">
-                                                                <div className="font-bold text-success text-base">
-                                                                    {formatCurrency(
-                                                                        asset.value
-                                                                    )}
-                                                                </div>
-                                                            </div>
+                                    {assets.map((asset) => (
+                                        <Card
+                                            key={asset.id}
+                                            className="border-success/20 hover:border-success/40 transition-colors p-0"
+                                        >
+                                            <CardContent className="p-3">
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-medium text-base truncate">
+                                                            {asset.name}
+                                                        </h3>
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="text-success bg-success/10 mt-1 text-xs px-2 py-0.5"
+                                                        >
+                                                            {getCategoryLabel(
+                                                                asset.category
+                                                            )}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="text-right ml-3">
+                                                        <div className="font-bold text-success text-base">
+                                                            {formatCurrency(
+                                                                asset.value
+                                                            )}
                                                         </div>
+                                                    </div>
+                                                </div>
 
-                                                        {asset.description && (
-                                                            <p className="text-sm text-muted-foreground mb-2">
-                                                                {
-                                                                    asset.description
-                                                                }
-                                                            </p>
+                                                {asset.description && (
+                                                    <p className="text-sm text-muted-foreground mb-2">
+                                                        {asset.description}
+                                                    </p>
+                                                )}
+
+                                                <div className="flex items-center gap-1 pt-2 border-t border-border/50">
+                                                    <Button
+                                                        onClick={() =>
+                                                            setViewingHistoryAsset(
+                                                                asset
+                                                            )
+                                                        }
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="flex-1 gap-1 h-8 text-xs"
+                                                    >
+                                                        <BarChart3 className="w-4 h-4" />
+                                                        History
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() =>
+                                                            setEditingAsset(
+                                                                asset
+                                                            )
+                                                        }
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="flex-1 gap-1 h-8 text-xs"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                        Edit
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() =>
+                                                            handleDeleteClick(
+                                                                asset
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            deletingId ===
+                                                            asset.id
+                                                        }
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="flex-1 gap-1 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    >
+                                                        {deletingId ===
+                                                        asset.id ? (
+                                                            <div className="loading-spinner w-4 h-4" />
+                                                        ) : (
+                                                            <Trash2 className="w-4 h-4" />
                                                         )}
-
-                                                        <div className="flex items-center gap-1 pt-2 border-t border-border/50">
-                                                            <Button
-                                                                onClick={() =>
-                                                                    setViewingHistoryAsset(
-                                                                        asset
-                                                                    )
-                                                                }
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="flex-1 gap-1 h-8 text-xs"
-                                                            >
-                                                                <BarChart3 className="w-4 h-4" />
-                                                                History
-                                                            </Button>
-                                                            <Button
-                                                                onClick={() =>
-                                                                    setEditingAsset(
-                                                                        asset
-                                                                    )
-                                                                }
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="flex-1 gap-1 h-8 text-xs"
-                                                            >
-                                                                <Edit className="w-4 h-4" />
-                                                                Edit
-                                                            </Button>
-                                                            <Button
-                                                                onClick={() =>
-                                                                    handleDeleteClick(
-                                                                        asset
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    deletingId ===
-                                                                    asset.id
-                                                                }
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="flex-1 gap-1 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                            >
-                                                                {deletingId ===
-                                                                asset.id ? (
-                                                                    <div className="loading-spinner w-4 h-4" />
-                                                                ) : (
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                )}
-                                                                Delete
-                                                            </Button>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </motion.div>
-                                        ))}
-                                    </AnimatePresence>
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
                                 </div>
                             </>
                         )}

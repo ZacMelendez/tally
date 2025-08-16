@@ -50,7 +50,7 @@ class BackendRateLimitService {
                 return cached.data;
             }
 
-            const response = await apiService.get<RateLimitData>(
+            const response = await apiService.request<RateLimitData>(
                 "/rate-limit/info"
             );
 
@@ -130,19 +130,6 @@ class BackendRateLimitService {
                 remaining: 1,
                 resetTime: Date.now() + 60000,
             };
-        }
-    }
-
-    /**
-     * Get rate limit statistics (for debugging/monitoring)
-     */
-    async getRateLimitStats(): Promise<any> {
-        try {
-            const response = await apiService.get("/rate-limit/stats");
-            return response.data;
-        } catch (error) {
-            console.error("Failed to get rate limit stats:", error);
-            return null;
         }
     }
 

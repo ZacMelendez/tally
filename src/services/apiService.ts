@@ -25,7 +25,7 @@ class ApiService {
         return await user.getIdToken();
     }
 
-    private async request<T>(
+    async request<T>(
         endpoint: string,
         options: RequestInit = {}
     ): Promise<ApiResponse<T>> {

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
 import {
     Plus,
     TrendingUp,
@@ -136,79 +135,52 @@ const Dashboard: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
                 {/* New User Welcome */}
                 {isNewUser && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="mb-8"
-                    >
-                        <Card className="mx-auto max-w-2xl">
-                            <CardContent className="text-center py-16 px-8">
-                                <motion.div
-                                    initial={{ scale: 0.8 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ delay: 0.2, duration: 0.4 }}
-                                    className="mb-6"
-                                >
-                                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                        <TrendingUp className="w-10 h-10 text-white" />
-                                    </div>
-                                </motion.div>
-                                <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                    Welcome to Tally!
-                                </h1>
-                                <p className="text-muted-foreground text-lg mb-8 max-w-lg mx-auto leading-relaxed">
-                                    Start tracking your financial journey by
-                                    adding your first asset or debt. Watch your
-                                    net worth grow over time with beautiful
-                                    charts and insights.
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-                                    <motion.div
-                                        whileTap={{ scale: 0.98 }}
-                                        className="flex-1"
-                                    >
-                                        <Button
-                                            onClick={() =>
-                                                setShowAssetForm(true)
-                                            }
-                                            size="lg"
-                                            className="w-full gap-2 h-12"
-                                        >
-                                            <Plus className="w-5 h-5" />
-                                            Add Your First Asset
-                                        </Button>
-                                    </motion.div>
-                                    <motion.div
-                                        whileTap={{ scale: 0.98 }}
-                                        className="flex-1"
-                                    >
-                                        <Button
-                                            onClick={() =>
-                                                setShowDebtForm(true)
-                                            }
-                                            variant="outline"
-                                            size="lg"
-                                            className="w-full gap-2 h-12"
-                                        >
-                                            <CreditCard className="w-5 h-5" />
-                                            Add a Debt
-                                        </Button>
-                                    </motion.div>
+                    <Card className="mx-auto mb-8 max-w-2xl">
+                        <CardContent className="text-center py-16 px-8">
+                            <div className="mb-6">
+                                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <TrendingUp className="w-10 h-10 text-white" />
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                            </div>
+                            <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                Welcome to Tally!
+                            </h1>
+                            <p className="text-muted-foreground text-lg mb-8 max-w-lg mx-auto leading-relaxed">
+                                Start tracking your financial journey by adding
+                                your first asset or debt. Watch your net worth
+                                grow over time with beautiful charts and
+                                insights.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+                                <div className="flex-1">
+                                    <Button
+                                        onClick={() => setShowAssetForm(true)}
+                                        size="lg"
+                                        className="w-full gap-2 h-12"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                        Add Your First Asset
+                                    </Button>
+                                </div>
+                                <div className="flex-1">
+                                    <Button
+                                        onClick={() => setShowDebtForm(true)}
+                                        variant="outline"
+                                        size="lg"
+                                        className="w-full gap-2 h-12"
+                                    >
+                                        <CreditCard className="w-5 h-5" />
+                                        Add a Debt
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Refresh Button */}
                 {!isNewUser && (
-                    <motion.div
-                        className="flex justify-end mb-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                    >
+                    <div className="flex justify-end mb-4">
                         <Button
                             onClick={handleRefresh}
                             variant="outline"
@@ -223,29 +195,16 @@ const Dashboard: React.FC = () => {
                             />
                             {refreshing ? "Refreshing..." : "Refresh"}
                         </Button>
-                    </motion.div>
+                    </div>
                 )}
 
                 {/* Stats Grid */}
                 {!isNewUser && (
-                    <motion.div
-                        className="grid grid-cols-1 md:grid-cols-3 gap-6"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                    >
-                        {stats.map((stat, index) => {
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {stats.map((stat) => {
                             const Icon = stat.icon;
                             return (
-                                <motion.div
-                                    key={stat.label}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{
-                                        delay: index * 0.1,
-                                        duration: 0.5,
-                                    }}
-                                >
+                                <div key={stat.label}>
                                     <Card className="hover:shadow-lg transition-all duration-200">
                                         <CardContent className="p-6">
                                             <div className="flex items-center justify-between">
@@ -269,150 +228,128 @@ const Dashboard: React.FC = () => {
                                             </div>
                                         </CardContent>
                                     </Card>
-                                </motion.div>
+                                </div>
                             );
                         })}
-                    </motion.div>
+                    </div>
                 )}
 
                 {/* Net Worth Chart */}
                 {netWorthHistory.length > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 0.5 }}
-                        className="mt-8"
-                    >
-                        <Card>
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-xl">
-                                    Net Worth Trend
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                                <NetWorthChart data={netWorthHistory} />
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                    <Card>
+                        <CardHeader className="pb-4 mt-8">
+                            <CardTitle className="text-xl">
+                                Net Worth Trend
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                            <NetWorthChart data={netWorthHistory} />
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Management Actions */}
                 {!isNewUser && (
-                    <motion.div
-                        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4, duration: 0.5 }}
-                    >
-                        {/* Assets Management Card */}
-                        <motion.div whileTap={{ scale: 0.98 }}>
-                            <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-success/20 hover:border-success/40">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
-                                                <TrendingUp className="w-6 h-6 text-success" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-lg">
-                                                    Assets
-                                                </h3>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {assets.length} item
-                                                    {assets.length !== 1
-                                                        ? "s"
-                                                        : ""}
-                                                </p>
-                                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-success/20 hover:border-success/40">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
+                                            <TrendingUp className="w-6 h-6 text-success" />
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-2xl font-bold text-success">
-                                                {formatCurrency(totalAssets)}
+                                        <div>
+                                            <h3 className="font-semibold text-lg">
+                                                Assets
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                {assets.length} item
+                                                {assets.length !== 1 ? "s" : ""}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setShowAssetForm(true);
-                                            }}
-                                            size="sm"
-                                            className="gap-2 flex-1"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                            Add Asset
-                                        </Button>
-                                        <Button
-                                            onClick={() =>
-                                                setShowAssetManagement(true)
-                                            }
-                                            variant="outline"
-                                            size="sm"
-                                            className="gap-2 flex-1"
-                                        >
-                                            Manage All
-                                        </Button>
+                                    <div className="text-right">
+                                        <p className="text-2xl font-bold text-success">
+                                            {formatCurrency(totalAssets)}
+                                        </p>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowAssetForm(true);
+                                        }}
+                                        size="sm"
+                                        className="gap-2 flex-1"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add Asset
+                                    </Button>
+                                    <Button
+                                        onClick={() =>
+                                            setShowAssetManagement(true)
+                                        }
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-2 flex-1"
+                                    >
+                                        Manage All
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                        {/* Debts Management Card */}
-                        <motion.div whileTap={{ scale: 0.98 }}>
-                            <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-destructive/20 hover:border-destructive/40">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 bg-destructive/10 rounded-lg flex items-center justify-center">
-                                                <CreditCard className="w-6 h-6 text-destructive" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-lg">
-                                                    Debts
-                                                </h3>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {debts.length} item
-                                                    {debts.length !== 1
-                                                        ? "s"
-                                                        : ""}
-                                                </p>
-                                            </div>
+                        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-destructive/20 hover:border-destructive/40">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 bg-destructive/10 rounded-lg flex items-center justify-center">
+                                            <CreditCard className="w-6 h-6 text-destructive" />
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-2xl font-bold text-destructive">
-                                                {formatCurrency(totalDebts)}
+                                        <div>
+                                            <h3 className="font-semibold text-lg">
+                                                Debts
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                {debts.length} item
+                                                {debts.length !== 1 ? "s" : ""}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setShowDebtForm(true);
-                                            }}
-                                            size="sm"
-                                            variant="destructive"
-                                            className="gap-2 flex-1"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                            Add Debt
-                                        </Button>
-                                        <Button
-                                            onClick={() =>
-                                                setShowDebtManagement(true)
-                                            }
-                                            variant="outline"
-                                            size="sm"
-                                            className="gap-2 flex-1"
-                                        >
-                                            Manage All
-                                        </Button>
+                                    <div className="text-right">
+                                        <p className="text-2xl font-bold text-destructive">
+                                            {formatCurrency(totalDebts)}
+                                        </p>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    </motion.div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowDebtForm(true);
+                                        }}
+                                        size="sm"
+                                        variant="destructive"
+                                        className="gap-2 flex-1"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add Debt
+                                    </Button>
+                                    <Button
+                                        onClick={() =>
+                                            setShowDebtManagement(true)
+                                        }
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-2 flex-1"
+                                    >
+                                        Manage All
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 )}
 
                 {/* Modals */}

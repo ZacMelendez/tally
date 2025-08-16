@@ -4,9 +4,9 @@ import { ValueHistoryService } from "../services/valueHistoryService";
 import { NetWorthService } from "../services/netWorthService";
 import { ApiResponse } from "../types";
 import {
-    assetAddRateLimit,
-    assetUpdateRateLimit,
+    assetRateLimit,
     deleteRateLimit,
+    globalRateLimit,
 } from "../middleware/rateLimit";
 
 export async function assetRoutes(fastify: FastifyInstance) {
@@ -15,66 +15,81 @@ export async function assetRoutes(fastify: FastifyInstance) {
     const netWorthService = new NetWorthService();
 
     // Get all assets for user
-    fastify.get("/", async (request, reply) => {
-        try {
-            const assets = await assetService.getAssets(request.userId!);
+    fastify.get(
+        "/",
+        {
+            preHandler: globalRateLimit,
+        },
+        async (request, reply) => {
+            try {
+                const assets = await assetService.getAssets(request.userId!);
 
-            const response: ApiResponse = {
-                success: true,
-                data: assets,
-            };
+                const response: ApiResponse = {
+                    success: true,
+                    data: assets,
+                };
 
-            return reply.send(response);
-        } catch (error) {
-            console.error("Error fetching assets:", error);
-            return reply.status(500).send({
-                success: false,
-                error: "Failed to fetch assets",
-            });
+                return reply.send(response);
+            } catch (error) {
+                console.error("Error fetching assets:", error);
+                return reply.status(500).send({
+                    success: false,
+                    error: "Failed to fetch assets",
+                });
+            }
         }
-    });
+    );
 
     // Get specific asset
-    fastify.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
-        try {
-            const asset = await assetService.getAsset(
-                request.params.id,
-                request.userId!
-            );
+    fastify.get<{ Params: { id: string } }>(
+        "/:id",
+        {
+            preHandler: globalRateLimit,
+        },
+        async (request, reply) => {
+            try {
+                const asset = await assetService.getAsset(
+                    request.params.id,
+                    request.userId!
+                );
 
-            if (!asset) {
-                return reply.status(404).send({
+                if (!asset) {
+                    return reply.status(404).send({
+                        success: false,
+                        error: "Asset not found",
+                    });
+                }
+
+                const response: ApiResponse = {
+                    success: true,
+                    data: asset,
+                };
+
+                return reply.send(response);
+            } catch (error) {
+                if (
+                    error instanceof Error &&
+                    error.message === "Unauthorized"
+                ) {
+                    return reply.status(403).send({
+                        success: false,
+                        error: "Unauthorized",
+                    });
+                }
+
+                console.error("Error fetching asset:", error);
+                return reply.status(500).send({
                     success: false,
-                    error: "Asset not found",
+                    error: "Failed to fetch asset",
                 });
             }
-
-            const response: ApiResponse = {
-                success: true,
-                data: asset,
-            };
-
-            return reply.send(response);
-        } catch (error) {
-            if (error instanceof Error && error.message === "Unauthorized") {
-                return reply.status(403).send({
-                    success: false,
-                    error: "Unauthorized",
-                });
-            }
-
-            console.error("Error fetching asset:", error);
-            return reply.status(500).send({
-                success: false,
-                error: "Failed to fetch asset",
-            });
         }
-    });
+    );
 
     // Create new asset
     fastify.post(
         "/",
-        { preHandler: assetAddRateLimit },
+        { preHandler: assetRateLimit },
         async (request, reply) => {
             try {
                 const asset = await assetService.createAsset(
@@ -128,7 +143,7 @@ export async function assetRoutes(fastify: FastifyInstance) {
     // Update asset
     fastify.put<{ Params: { id: string } }>(
         "/:id",
-        { preHandler: assetUpdateRateLimit },
+        { preHandler: assetRateLimit },
         async (request, reply) => {
             try {
                 const asset = await assetService.updateAsset(
@@ -249,35 +264,44 @@ export async function assetRoutes(fastify: FastifyInstance) {
     fastify.get<{
         Params: { id: string };
         Querystring: { limit?: string };
-    }>("/:id/history", async (request, reply) => {
-        try {
-            const limit = request.query.limit
-                ? parseInt(request.query.limit)
-                : undefined;
-            const history = await valueHistoryService.getAssetValueHistory(
-                request.params.id,
-                request.userId!,
-                limit
-            );
+    }>(
+        "/:id/history",
+        {
+            preHandler: globalRateLimit,
+        },
+        async (request, reply) => {
+            try {
+                const limit = request.query.limit
+                    ? parseInt(request.query.limit)
+                    : undefined;
+                const history = await valueHistoryService.getAssetValueHistory(
+                    request.params.id,
+                    request.userId!,
+                    limit
+                );
 
-            const response: ApiResponse = {
-                success: true,
-                data: history,
-            };
+                const response: ApiResponse = {
+                    success: true,
+                    data: history,
+                };
 
-            return reply.send(response);
-        } catch (error) {
-            console.error("Error fetching asset history:", error);
-            return reply.status(500).send({
-                success: false,
-                error: "Failed to fetch asset history",
-            });
+                return reply.send(response);
+            } catch (error) {
+                console.error("Error fetching asset history:", error);
+                return reply.status(500).send({
+                    success: false,
+                    error: "Failed to fetch asset history",
+                });
+            }
         }
-    });
+    );
 
     // Add value history entry
     fastify.post<{ Params: { id: string } }>(
         "/:id/history",
+        {
+            preHandler: assetRateLimit,
+        },
         async (request, reply) => {
             try {
                 const history = await valueHistoryService.addAssetValueHistory(

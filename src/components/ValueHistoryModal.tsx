@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useCallback } from "react";
 import { Plus, TrendingUp, TrendingDown, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,11 +65,7 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
     const [newNote, setNewNote] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
-    useEffect(() => {
-        loadHistory();
-    }, [item.id, currentUser]);
-
-    const loadHistory = async () => {
+    const loadHistory = useCallback(async () => {
         if (!currentUser) return;
 
         try {
@@ -90,7 +85,11 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
         } finally {
             setLoading(false);
         }
-    };
+    }, [item.id, currentUser, type]);
+
+    useEffect(() => {
+        loadHistory();
+    }, [item.id, currentUser, loadHistory]);
 
     const handleAddValue = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -308,95 +307,83 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
                     )}
 
                     {/* Add Value Form */}
-                    <AnimatePresence>
-                        {showAddForm && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <Card className="border-2 border-dashed">
-                                    <CardContent className="p-4">
-                                        <form
-                                            onSubmit={handleAddValue}
-                                            className="space-y-4"
+
+                    {showAddForm && (
+                        <Card className="border-2 border-dashed">
+                            <CardContent className="p-4">
+                                <form
+                                    onSubmit={handleAddValue}
+                                    className="space-y-4"
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor="newValue">
+                                                New{" "}
+                                                {type === "asset"
+                                                    ? "Value"
+                                                    : "Amount"}{" "}
+                                                *
+                                            </Label>
+                                            <Input
+                                                id="newValue"
+                                                type="number"
+                                                value={newValue}
+                                                onChange={(e) =>
+                                                    setNewValue(e.target.value)
+                                                }
+                                                placeholder="0.00"
+                                                min="0"
+                                                step="0.01"
+                                                required
+                                                disabled={submitting}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="newNote">
+                                                Note (Optional)
+                                            </Label>
+                                            <Input
+                                                id="newNote"
+                                                value={newNote}
+                                                onChange={(e) =>
+                                                    setNewNote(e.target.value)
+                                                }
+                                                placeholder="e.g., Market update, Payment made"
+                                                disabled={submitting}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 justify-end">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={() =>
+                                                setShowAddForm(false)
+                                            }
+                                            disabled={submitting}
                                         >
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <Label htmlFor="newValue">
-                                                        New{" "}
-                                                        {type === "asset"
-                                                            ? "Value"
-                                                            : "Amount"}{" "}
-                                                        *
-                                                    </Label>
-                                                    <Input
-                                                        id="newValue"
-                                                        type="number"
-                                                        value={newValue}
-                                                        onChange={(e) =>
-                                                            setNewValue(
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        placeholder="0.00"
-                                                        min="0"
-                                                        step="0.01"
-                                                        required
-                                                        disabled={submitting}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Label htmlFor="newNote">
-                                                        Note (Optional)
-                                                    </Label>
-                                                    <Input
-                                                        id="newNote"
-                                                        value={newNote}
-                                                        onChange={(e) =>
-                                                            setNewNote(
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        placeholder="e.g., Market update, Payment made"
-                                                        disabled={submitting}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 justify-end">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    onClick={() =>
-                                                        setShowAddForm(false)
-                                                    }
-                                                    disabled={submitting}
-                                                >
-                                                    Cancel
-                                                </Button>
-                                                <Button
-                                                    type="submit"
-                                                    disabled={submitting}
-                                                    className={
-                                                        type === "asset"
-                                                            ? ""
-                                                            : "bg-destructive hover:bg-destructive/90"
-                                                    }
-                                                >
-                                                    {submitting ? (
-                                                        <div className="loading-spinner w-4 h-4" />
-                                                    ) : (
-                                                        "Add Entry"
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </form>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            disabled={submitting}
+                                            className={
+                                                type === "asset"
+                                                    ? ""
+                                                    : "bg-destructive hover:bg-destructive/90"
+                                            }
+                                        >
+                                            {submitting ? (
+                                                <div className="loading-spinner w-4 h-4" />
+                                            ) : (
+                                                "Add Entry"
+                                            )}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* History List */}
                     <div>
@@ -478,19 +465,8 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
                                                     : null;
 
                                                 return (
-                                                    <motion.tr
+                                                    <tr
                                                         key={entry.id}
-                                                        initial={{
-                                                            opacity: 0,
-                                                            y: 10,
-                                                        }}
-                                                        animate={{
-                                                            opacity: 1,
-                                                            y: 0,
-                                                        }}
-                                                        transition={{
-                                                            delay: index * 0.05,
-                                                        }}
                                                         className="border-b border-border/50 hover:bg-muted/30 transition-colors"
                                                     >
                                                         <td className="py-2 px-3">
@@ -569,7 +545,7 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
                                                                 </Badge>
                                                             )}
                                                         </td>
-                                                    </motion.tr>
+                                                    </tr>
                                                 );
                                             })}
                                         </tbody>

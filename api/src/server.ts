@@ -1,14 +1,12 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { authenticateUser } from "./middleware/auth";
-import {
-    globalRateLimit,
-    getRateLimitInfo,
-    getRateLimitStats,
-} from "./middleware/rateLimit";
+import { globalRateLimit, getRateLimitInfo } from "./middleware/rateLimit";
 import { assetRoutes } from "./routes/assets";
 import { debtRoutes } from "./routes/debts";
 import { networthRoutes } from "./routes/networth";
+import dotenv from "dotenv";
+dotenv.config();
 
 const fastify = Fastify({
     logger: {
@@ -60,7 +58,6 @@ async function buildApp() {
 
             // Rate limit info endpoints
             fastify.get("/rate-limit/info", getRateLimitInfo);
-            fastify.get("/rate-limit/stats", getRateLimitStats);
 
             // Register protected routes
             await fastify.register(assetRoutes, { prefix: "/assets" });

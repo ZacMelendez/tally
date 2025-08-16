@@ -2,9 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.networthRoutes = networthRoutes;
 const netWorthService_1 = require("../services/netWorthService");
+const rateLimit_1 = require("../middleware/rateLimit");
 async function networthRoutes(fastify) {
     const netWorthService = new netWorthService_1.NetWorthService();
-    fastify.get("/history", async (request, reply) => {
+    fastify.get("/history", {
+        preHandler: rateLimit_1.globalRateLimit,
+    }, async (request, reply) => {
         try {
             const limit = request.query.limit
                 ? parseInt(request.query.limit)
@@ -24,7 +27,9 @@ async function networthRoutes(fastify) {
             });
         }
     });
-    fastify.get("/current", async (request, reply) => {
+    fastify.get("/current", {
+        preHandler: rateLimit_1.globalRateLimit,
+    }, async (request, reply) => {
         try {
             const currentNetWorth = await netWorthService.getCurrentNetWorth(request.userId);
             const response = {
@@ -41,7 +46,9 @@ async function networthRoutes(fastify) {
             });
         }
     });
-    fastify.post("/snapshot", async (request, reply) => {
+    fastify.post("/snapshot", {
+        preHandler: rateLimit_1.globalRateLimit,
+    }, async (request, reply) => {
         try {
             const snapshot = await netWorthService.createSnapshotFromCurrentData(request.userId);
             if (!snapshot) {
@@ -65,7 +72,9 @@ async function networthRoutes(fastify) {
             });
         }
     });
-    fastify.get("/should-snapshot", async (request, reply) => {
+    fastify.get("/should-snapshot", {
+        preHandler: rateLimit_1.globalRateLimit,
+    }, async (request, reply) => {
         try {
             const shouldCreate = await netWorthService.shouldCreateSnapshot(request.userId);
             const response = {

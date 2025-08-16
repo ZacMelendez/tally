@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 import {
     LineChart,
     Line,
@@ -9,9 +8,16 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import { format } from "date-fns";
 import { NetWorthSnapshot } from "../types";
 import { Activity } from "lucide-react";
+
+const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+    });
+};
 
 interface NetWorthChartProps {
     data: NetWorthSnapshot[];
@@ -27,16 +33,48 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
         }).format(value);
     };
 
-    const chartData = data
-        .slice()
-        .reverse()
-        .map((snapshot) => ({
-            date: format(snapshot.createdAt, "MMM dd"),
-            netWorth: snapshot.netWorth,
-            assets: snapshot.totalAssets,
-            debts: snapshot.totalDebts,
-            fullDate: snapshot.createdAt,
-        }));
+    // Group data by day and use the latest snapshot for each day
+    const groupedByDay = data.reduce((acc, snapshot) => {
+        const dateKey = new Date(snapshot.createdAt).toLocaleDateString(
+            "en-US",
+            {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+            }
+        );
+
+        // If we don't have this day yet, or this snapshot is more recent, use it
+        if (
+            !acc[dateKey] ||
+            new Date(snapshot.createdAt) > new Date(acc[dateKey].createdAt)
+        ) {
+            acc[dateKey] = snapshot;
+        }
+
+        return acc;
+    }, {} as Record<string, NetWorthSnapshot>);
+
+    const chartData = Object.values(groupedByDay)
+        .sort(
+            (a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+        )
+        .map((snapshot) => {
+            console.log({ snapshot });
+            return {
+                date: new Date(snapshot.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                }),
+                netWorth: snapshot.netWorth,
+                assets: snapshot.totalAssets,
+                debts: snapshot.totalDebts,
+                fullDate: snapshot.createdAt,
+            };
+        });
 
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
@@ -44,7 +82,7 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
             return (
                 <div className="bg-popover p-4 rounded-lg border border-border shadow-lg">
                     <p className="text-muted-foreground text-sm mb-2">
-                        {format(data.fullDate, "MMMM dd, yyyy")}
+                        {formatDate(data.fullDate)}
                     </p>
                     <div className="space-y-1">
                         <p className="text-primary font-semibold">
@@ -70,12 +108,7 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
         previousValue !== 0 ? (change / Math.abs(previousValue)) * 100 : 0;
 
     return (
-        <motion.div
-            className="bg-card border border-success/20 hover:border-success/40 rounded-lg p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border-none"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-        >
+        <div className="bg-card border border-success/20 hover:border-success/40 rounded-lg p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border-none">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -83,10 +116,10 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
                     </div>
                     <div>
                         <h2 className="text-xl font-bold text-foreground">
-                            Net Worth History
+                            Daily Net Worth History
                         </h2>
                         <p className="text-sm text-muted-foreground">
-                            Track your financial progress over time
+                            Track your daily financial progress over time
                         </p>
                     </div>
                 </div>
@@ -179,7 +212,7 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
                     </div>
                 </div>
             )}
-        </motion.div>
+        </div>
     );
 };
 

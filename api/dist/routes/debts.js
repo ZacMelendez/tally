@@ -9,7 +9,9 @@ async function debtRoutes(fastify) {
     const debtService = new debtService_1.DebtService();
     const valueHistoryService = new valueHistoryService_1.ValueHistoryService();
     const netWorthService = new netWorthService_1.NetWorthService();
-    fastify.get("/", async (request, reply) => {
+    fastify.get("/", {
+        preHandler: rateLimit_1.globalRateLimit,
+    }, async (request, reply) => {
         try {
             const debts = await debtService.getDebts(request.userId);
             const response = {
@@ -26,7 +28,9 @@ async function debtRoutes(fastify) {
             });
         }
     });
-    fastify.get("/:id", async (request, reply) => {
+    fastify.get("/:id", {
+        preHandler: rateLimit_1.globalRateLimit,
+    }, async (request, reply) => {
         try {
             const debt = await debtService.getDebt(request.params.id, request.userId);
             if (!debt) {
@@ -42,7 +46,8 @@ async function debtRoutes(fastify) {
             return reply.send(response);
         }
         catch (error) {
-            if (error instanceof Error && error.message === "Unauthorized") {
+            if (error instanceof Error &&
+                error.message === "Unauthorized") {
                 return reply.status(403).send({
                     success: false,
                     error: "Unauthorized",
@@ -55,7 +60,7 @@ async function debtRoutes(fastify) {
             });
         }
     });
-    fastify.post("/", { preHandler: rateLimit_1.debtAddRateLimit }, async (request, reply) => {
+    fastify.post("/", { preHandler: rateLimit_1.debtRateLimit }, async (request, reply) => {
         try {
             const debt = await debtService.createDebt(request.userId, request.body);
             try {
@@ -85,7 +90,7 @@ async function debtRoutes(fastify) {
             });
         }
     });
-    fastify.put("/:id", { preHandler: rateLimit_1.debtUpdateRateLimit }, async (request, reply) => {
+    fastify.put("/:id", { preHandler: rateLimit_1.debtRateLimit }, async (request, reply) => {
         try {
             const debt = await debtService.updateDebt(request.params.id, request.userId, request.body);
             try {
@@ -160,7 +165,9 @@ async function debtRoutes(fastify) {
             });
         }
     });
-    fastify.get("/:id/history", async (request, reply) => {
+    fastify.get("/:id/history", {
+        preHandler: rateLimit_1.globalRateLimit,
+    }, async (request, reply) => {
         try {
             const limit = request.query.limit
                 ? parseInt(request.query.limit)
@@ -180,7 +187,9 @@ async function debtRoutes(fastify) {
             });
         }
     });
-    fastify.post("/:id/history", async (request, reply) => {
+    fastify.post("/:id/history", {
+        preHandler: rateLimit_1.debtRateLimit,
+    }, async (request, reply) => {
         try {
             const history = await valueHistoryService.addDebtValueHistory(request.params.id, request.userId, request.body);
             try {

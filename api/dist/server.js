@@ -11,6 +11,8 @@ const rateLimit_1 = require("./middleware/rateLimit");
 const assets_1 = require("./routes/assets");
 const debts_1 = require("./routes/debts");
 const networth_1 = require("./routes/networth");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const fastify = (0, fastify_1.default)({
     logger: {
         level: process.env.LOG_LEVEL || "info",
@@ -46,7 +48,6 @@ async function buildApp() {
         fastify.addHook("preHandler", auth_1.authenticateUser);
         fastify.addHook("preHandler", rateLimit_1.globalRateLimit);
         fastify.get("/rate-limit/info", rateLimit_1.getRateLimitInfo);
-        fastify.get("/rate-limit/stats", rateLimit_1.getRateLimitStats);
         await fastify.register(assets_1.assetRoutes, { prefix: "/assets" });
         await fastify.register(debts_1.debtRoutes, { prefix: "/debts" });
         await fastify.register(networth_1.networthRoutes, { prefix: "/networth" });
