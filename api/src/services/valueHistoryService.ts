@@ -8,6 +8,8 @@ import { Timestamp } from "firebase-admin/firestore";
 
 export class ValueHistoryService {
     private assetHistoryCollection = db.collection("assetValueHistory");
+    private assetCollection = db.collection("assets");
+    private debtCollection = db.collection("debts");
     private debtHistoryCollection = db.collection("debtValueHistory");
 
     // Asset Value History
@@ -26,6 +28,17 @@ export class ValueHistoryService {
         };
 
         const docRef = await this.assetHistoryCollection.add(docData);
+
+        const assetDoc = await this.assetCollection.doc(assetId).get();
+
+        if (assetDoc.exists) {
+            const now = Timestamp.now();
+            const updateData = {
+                value: data.value,
+                updatedAt: now,
+            };
+            await assetDoc.ref.update(updateData);
+        }
 
         return {
             id: docRef.id,
@@ -94,6 +107,17 @@ export class ValueHistoryService {
         };
 
         const docRef = await this.debtHistoryCollection.add(docData);
+
+        const debtDoc = await this.debtCollection.doc(debtId).get();
+
+        if (debtDoc.exists) {
+            const now = Timestamp.now();
+            const updateData = {
+                amount: data.value,
+                updatedAt: now,
+            };
+            await debtDoc.ref.update(updateData);
+        }
 
         return {
             id: docRef.id,

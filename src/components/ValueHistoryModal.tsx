@@ -125,11 +125,9 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
                 } value updated successfully!`
             );
 
-            // Refresh history and update parent
             await loadHistory();
             onValueUpdate?.(value);
 
-            // Reset form
             setNewValue("");
             setNewNote("");
             setShowAddForm(false);
@@ -141,36 +139,33 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
         }
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("en-US", {
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: "USD",
         }).format(amount);
-    };
 
-    const formatDate = (date: Date) => {
-        return new Intl.DateTimeFormat("en-US", {
+    const formatDate = (date: string) =>
+        new Intl.DateTimeFormat("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
-        }).format(date);
-    };
+        }).format(new Date(date));
 
-    const formatDateShort = (date: Date) => {
-        return new Intl.DateTimeFormat("en-US", {
+    const formatDateShort = (date: string) =>
+        new Intl.DateTimeFormat("en-US", {
             month: "short",
             day: "numeric",
-        }).format(date);
-    };
+        }).format(new Date(date));
 
     // Prepare chart data
     const chartData = {
         labels: history
             .slice()
             .reverse()
-            .map((entry) => formatDateShort(entry.createdAt)),
+            .map((entry) => formatDateShort(String(entry.createdAt))),
         datasets: [
             {
                 label: `${type === "asset" ? "Asset" : "Debt"} Value`,
@@ -291,6 +286,7 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
                             onClick={() => setShowAddForm(true)}
                             size="sm"
                             className="gap-2"
+                            variant="outline"
                         >
                             <Plus className="w-4 h-4" />
                             Update Value
@@ -299,14 +295,11 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
                 </DialogHeader>
 
                 <div className="space-y-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-                    {/* Chart Section */}
                     {history.length > 1 && (
                         <div className="h-64 w-full">
                             <Line data={chartData} options={chartOptions} />
                         </div>
                     )}
-
-                    {/* Add Value Form */}
 
                     {showAddForm && (
                         <Card className="border-2 border-dashed">
@@ -385,7 +378,6 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
                         </Card>
                     )}
 
-                    {/* History List */}
                     <div>
                         <h3 className="text-lg font-semibold mb-4">
                             Value History ({history.length} entries)
@@ -472,7 +464,9 @@ const ValueHistoryModal: React.FC<ValueHistoryModalProps> = ({
                                                         <td className="py-2 px-3">
                                                             <div className="text-sm">
                                                                 {formatDate(
-                                                                    entry.createdAt
+                                                                    String(
+                                                                        entry.createdAt
+                                                                    )
                                                                 )}
                                                             </div>
                                                         </td>

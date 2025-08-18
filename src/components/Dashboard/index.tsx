@@ -2,24 +2,26 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
     Plus,
     TrendingUp,
-    TrendingDown,
     CreditCard,
     Target,
     Activity,
     RefreshCw,
 } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { Asset, Debt, NetWorthSnapshot } from "../types";
-import { analyticsService } from "../services/analyticsService";
-import { apiService } from "../services/apiService";
-import AssetForm from "./AssetForm";
-import DebtForm from "./DebtForm";
-import AssetManagementModal from "./AssetManagementModal";
-import DebtManagementModal from "./DebtManagementModal";
-import NetWorthChart from "./NetWorthChart";
+import { useAuth } from "../../contexts/AuthContext";
+import { Asset, Debt, NetWorthSnapshot } from "../../types";
+import { analyticsService } from "../../services/analyticsService";
+import { apiService } from "../../services/apiService";
+import AssetForm from "../AssetForm";
+import DebtForm from "../DebtForm";
+import AssetManagementModal from "../AssetManagementModal";
+import DebtManagementModal from "../DebtManagementModal";
+import NetWorthChart from "../NetWorthChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import { AssetCard } from "./AssetCard";
+import { DebtCard } from "./DebtCard";
+import Loader from "../Loader";
 
 const Dashboard: React.FC = () => {
     const { currentUser } = useAuth();
@@ -73,12 +75,12 @@ const Dashboard: React.FC = () => {
 
     const handleAssetSuccess = () => {
         setShowAssetForm(false);
-        loadData(); // Refresh data after asset operation
+        loadData();
     };
 
     const handleDebtSuccess = () => {
         setShowDebtForm(false);
-        loadData(); // Refresh data after debt operation
+        loadData();
     };
 
     const totalAssets = assets.reduce((sum, asset) => sum + asset.value, 0);
@@ -94,20 +96,6 @@ const Dashboard: React.FC = () => {
 
     const stats = [
         {
-            label: "Total Assets",
-            value: formatCurrency(totalAssets),
-            icon: TrendingUp,
-            color: "text-success",
-            bgColor: "bg-success/10",
-        },
-        {
-            label: "Total Debts",
-            value: formatCurrency(totalDebts),
-            icon: TrendingDown,
-            color: "text-destructive",
-            bgColor: "bg-destructive/10",
-        },
-        {
             label: "Net Worth",
             value: formatCurrency(netWorth),
             icon: netWorth >= 0 ? Target : Activity,
@@ -117,11 +105,7 @@ const Dashboard: React.FC = () => {
     ];
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="loading-spinner"></div>
-            </div>
-        );
+        return <Loader />;
     }
 
     // Check if this is a new user with no data
@@ -201,6 +185,8 @@ const Dashboard: React.FC = () => {
                 {/* Stats Grid */}
                 {!isNewUser && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <AssetCard assets={assets} />
+                        <DebtCard debts={debts} />
                         {stats.map((stat) => {
                             const Icon = stat.icon;
                             return (
