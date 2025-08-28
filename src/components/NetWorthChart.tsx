@@ -55,7 +55,7 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
         return acc;
     }, {} as Record<string, NetWorthSnapshot>);
 
-    const chartData = Object.values(groupedByDay)
+    let chartData = Object.values(groupedByDay)
         .sort(
             (a, b) =>
                 new Date(a.createdAt).getTime() -
@@ -72,6 +72,30 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
             debts: snapshot.totalDebts,
             fullDate: snapshot.createdAt,
         }));
+
+    // If there's no change from day to day, only show the most recent day
+    if (chartData.length > 1) {
+        const hasChange = chartData.some((item, index) => {
+            if (index === 0) return false;
+            return item.netWorth !== chartData[index - 1].netWorth;
+        });
+
+        if (!hasChange) {
+            chartData = [chartData[chartData.length - 1]];
+        }
+    }
+
+    // Calculate y-axis domain with padding
+    const netWorthValues = chartData.map((item) => item.netWorth);
+    const minNetWorth = Math.min(...netWorthValues);
+    const maxNetWorth = Math.max(...netWorthValues);
+    const range = maxNetWorth - minNetWorth;
+    const padding = range * 0.1; // 10% padding
+
+    const yAxisDomain = [
+        Math.max(0, minNetWorth - padding), // Don't go below 0
+        maxNetWorth + padding,
+    ];
 
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
@@ -168,6 +192,7 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
                                 tick={{ fill: "rgba(255, 255, 255, 0.7)" }}
                             />
                             <YAxis
+                                domain={yAxisDomain}
                                 stroke="rgba(255, 255, 255, 0.7)"
                                 fontSize={12}
                                 tickFormatter={formatCurrency}
@@ -200,11 +225,16 @@ const NetWorthChart: React.FC<NetWorthChartProps> = ({ data }) => {
                     <div className="text-center">
                         <Activity className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                            Building Your History
+                            {chartData.length === 1
+                                ? "Current Net Worth"
+                                : "Building Your History"}
                         </h3>
                         <p className="text-muted-foreground max-w-md">
-                            Keep adding and updating your assets and debts to
-                            see your net worth trends over time.
+                            {chartData.length === 1
+                                ? `Your current net worth is ${formatCurrency(
+                                      chartData[0]?.netWorth || 0
+                                  )}. Add more data to see trends over time.`
+                                : "Keep adding and updating your assets and debts to see your net worth trends over time."}
                         </p>
                     </div>
                 </div>

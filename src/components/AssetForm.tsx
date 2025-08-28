@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "../contexts/AuthContext";
 import { useBackendRateLimit } from "../hooks/useBackendRateLimit";
 import { Asset, AssetCategory } from "../types";
@@ -23,6 +26,32 @@ interface AssetFormProps {
     asset?: Asset;
 }
 
+// Zod schema for asset form validation
+const assetFormSchema = z.object({
+    name: z.string().min(1, "Asset name is required").trim(),
+    value: z.number().min(0, "Value must be a positive number"),
+    category: z.enum([
+        "cash",
+        "savings",
+        "checking",
+        "investment",
+        "retirement",
+        "real-estate",
+        "vehicle",
+        "personal-property",
+        "crypto",
+        "other",
+    ] as const),
+    description: z.string().optional(),
+    url: z
+        .string()
+        .url("Please enter a valid URL")
+        .optional()
+        .or(z.literal("")),
+});
+
+type AssetFormData = z.infer<typeof assetFormSchema>;
+
 const ASSET_CATEGORIES: { value: AssetCategory; label: string }[] = [
     { value: "cash", label: "Cash" },
     { value: "savings", label: "Savings Account" },
@@ -45,49 +74,43 @@ const AssetForm: React.FC<AssetFormProps> = ({
     const { currentUser } = useAuth();
     const { checkRateLimit, isLoading: rateLimitLoading } =
         useBackendRateLimit();
-    const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        name: asset?.name || "",
-        value: asset?.value?.toString() || "",
-        category: asset?.category || ("other" as AssetCategory),
-        description: asset?.description || "",
-        url: asset?.url || "",
+
+    const {
+        register,
+        handleSubmit,
+        control,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<AssetFormData>({
+        resolver: zodResolver(assetFormSchema),
+        defaultValues: {
+            name: asset?.name || "",
+            value: asset?.value || 0,
+            category: asset?.category || undefined,
+            description: asset?.description || "",
+            url: asset?.url || "",
+        },
     });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const onSubmit = async (data: AssetFormData) => {
         if (!currentUser) return;
 
         const action = asset ? "update-asset" : "add-asset";
         const rateLimitPassed = await checkRateLimit(action);
         if (!rateLimitPassed) return;
 
-        if (!formData.name.trim() || !formData.value.trim()) {
-            toast.error("Name and value are required");
-            return;
-        }
-
-        const value = parseFloat(formData.value);
-        if (isNaN(value) || value < 0) {
-            toast.error("Please enter a valid positive value");
-            return;
-        }
-
-        setLoading(true);
-
         try {
             const assetData = {
-                name: formData.name.trim(),
-                value,
-                category: formData.category,
-                description: formData.description.trim(),
-                url: formData.url.trim(),
+                name: data.name.trim(),
+                value: data.value,
+                category: data.category,
+                description: data.description?.trim() || "",
+                url: data.url?.trim() || "",
             };
 
             if (asset) {
                 // Check if value changed to add history entry
-                const valueChanged = asset.value !== value;
+                const valueChanged = asset.value !== data.value;
 
                 await apiService.updateAsset(asset.id, assetData);
 
@@ -95,7 +118,7 @@ const AssetForm: React.FC<AssetFormProps> = ({
                 if (valueChanged) {
                     try {
                         await apiService.addAssetHistory(asset.id, {
-                            value,
+                            value: data.value,
                             note: "Value updated",
                         });
                     } catch (historyError) {
@@ -108,28 +131,19 @@ const AssetForm: React.FC<AssetFormProps> = ({
                 }
 
                 toast.success("Asset updated successfully!");
-                analyticsService.trackAssetUpdated(formData.category, value);
+                analyticsService.trackAssetUpdated(data.category, data.value);
             } else {
                 await apiService.createAsset(assetData);
 
                 toast.success("Asset added successfully!");
-                analyticsService.trackAssetAdded(formData.category, value);
+                analyticsService.trackAssetAdded(data.category, data.value);
             }
 
-            setFormData({
-                name: "",
-                value: "",
-                category: "other",
-                description: "",
-                url: "",
-            });
-
+            reset();
             onSuccess();
         } catch (error) {
             console.error("Error saving asset:", error);
             toast.error("Failed to save asset. Please try again.");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -142,117 +156,136 @@ const AssetForm: React.FC<AssetFormProps> = ({
                     </DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Asset Name *</Label>
-                        <Input
-                            id="name"
-                            type="text"
-                            value={formData.name}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    name: e.target.value,
-                                })
-                            }
-                            placeholder="e.g., Emergency Fund, 401k, House"
-                            required
-                            disabled={loading}
+
+                        <Controller
+                            name="name"
+                            control={control}
+                            render={({ field: { ref: _ref, ...field } }) => (
+                                <Input
+                                    id={field.name}
+                                    type="text"
+                                    placeholder="e.g., Emergency Fund, 401k, House"
+                                    disabled={isSubmitting}
+                                    {...field}
+                                />
+                            )}
                         />
+                        {errors.name && (
+                            <p className="text-sm text-red-500">
+                                {errors.name.message}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="value">Value *</Label>
-                        <Input
-                            id="value"
-                            type="number"
-                            value={formData.value}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    value: e.target.value,
-                                })
-                            }
-                            placeholder="0.00"
-                            min="0"
-                            step="0.01"
-                            required
-                            disabled={loading}
+                        <Controller
+                            name="value"
+                            control={control}
+                            render={({ field: { ref: _ref, ...field } }) => (
+                                <Input
+                                    id={field.name}
+                                    type="number"
+                                    placeholder="0.00"
+                                    min="0"
+                                    step="0.01"
+                                    disabled={isSubmitting}
+                                    {...field}
+                                />
+                            )}
                         />
+
+                        {errors.value && (
+                            <p className="text-sm text-red-500">
+                                {errors.value.message}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="category">Category *</Label>
-                        <select
-                            id="category"
-                            value={formData.category}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    category: e.target.value as AssetCategory,
-                                })
-                            }
-                            required
-                            disabled={loading}
-                            className={cn(
-                                ...inputStyles,
-                                "border-r-8 border-r-transparent bg-background"
-                            )}
-                        >
-                            {ASSET_CATEGORIES.map((category) => (
-                                <option
-                                    key={category.value}
-                                    value={category.value}
+                        <Controller
+                            name="category"
+                            control={control}
+                            render={({ field: { ref: _ref, ...field } }) => (
+                                <select
+                                    id="category"
+                                    {...field}
+                                    disabled={isSubmitting}
+                                    className={cn(
+                                        ...inputStyles,
+                                        "border-r-8 border-r-transparent bg-background"
+                                    )}
                                 >
-                                    {category.label}
-                                </option>
-                            ))}
-                        </select>
+                                    {ASSET_CATEGORIES.map((category) => (
+                                        <option
+                                            key={category.value}
+                                            value={category.value}
+                                        >
+                                            {category.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                        />
+                        {errors.category && (
+                            <p className="text-sm text-red-500">
+                                {errors.category.message}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="url">Website/Account URL</Label>
-                        <Input
-                            id="url"
-                            type="url"
-                            value={formData.url}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    url: e.target.value,
-                                })
-                            }
-                            placeholder="https://example.com (optional)"
-                            disabled={loading}
+
+                        <Controller
+                            name="value"
+                            control={control}
+                            render={({ field: { ref: _ref, ...field } }) => (
+                                <Input
+                                    id={field.name}
+                                    type="url"
+                                    {...field}
+                                    placeholder="https://example.com (optional)"
+                                    disabled={isSubmitting}
+                                />
+                            )}
                         />
+                        {errors.url && (
+                            <p className="text-sm text-red-500">
+                                {errors.url.message}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="description">Description</Label>
                         <textarea
                             id="description"
-                            value={formData.description}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    description: e.target.value,
-                                })
-                            }
+                            {...register("description")}
                             placeholder="Optional description..."
                             rows={3}
-                            disabled={loading}
+                            disabled={isSubmitting}
                             className={cn(
                                 ...inputStyles,
                                 "w-full resize-none rounded-md px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground min-h-20"
                             )}
                         />
+                        {errors.description && (
+                            <p className="text-sm text-red-500">
+                                {errors.description.message}
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex gap-3 pt-4">
                         <Button
                             type="button"
                             onClick={onClose}
-                            disabled={loading}
+                            disabled={isSubmitting}
                             variant="outline"
                             className="flex-1"
                         >
@@ -260,10 +293,10 @@ const AssetForm: React.FC<AssetFormProps> = ({
                         </Button>
                         <Button
                             type="submit"
-                            disabled={loading || rateLimitLoading}
+                            disabled={isSubmitting || rateLimitLoading}
                             className="flex-1"
                         >
-                            {loading || rateLimitLoading ? (
+                            {isSubmitting || rateLimitLoading ? (
                                 <div className="loading-spinner" />
                             ) : asset ? (
                                 "Update Asset"

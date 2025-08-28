@@ -9,9 +9,22 @@ import {
     AccordionTrigger,
 } from "../ui/accordion";
 import { ResponsiveContainer, Pie, PieChart, Tooltip, Cell } from "recharts";
+import { useEffect, useState } from "react";
 
 export const DebtCard = ({ debts }: { debts: Debt[] }) => {
     const totalDebts = debts.reduce((sum, debt) => sum + debt.amount, 0);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768); // md breakpoint
+        };
+
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
 
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
@@ -48,10 +61,14 @@ export const DebtCard = ({ debts }: { debts: Debt[] }) => {
                             >
                                 <>
                                     <TrendingDown
-                                        className={`w-6 h-6 text-destructive will-change-transform opacity-100 group-hover:-translate-y-10 group-hover:opacity-0 transition-all duration-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`}
+                                        className={`w-6 h-6 text-destructive will-change-transform opacity-100 group-hover:-translate-y-10 group-hover:opacity-0 transition-all duration-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:block hidden`}
                                     />
                                     <ChevronDown
-                                        className={`w-6 h-6 text-destructive will-change-transform group-hover:-translate-y-1/2 transition-all duration-300 opacity-0 group-hover:opacity-100 absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-10`}
+                                        className={`w-6 h-6 text-destructive will-change-transform group-hover:-translate-y-1/2 transition-all duration-300 opacity-0 group-hover:opacity-100 absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-10 group-data-[state=open]:rotate-180 sm:block hidden`}
+                                    />
+
+                                    <ChevronDown
+                                        className={`w-6 h-6 text-destructive will-change-transform transition-all duration-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-data-[state=open]:rotate-180 sm:hidden block`}
                                     />
                                 </>
                             </div>
@@ -87,6 +104,40 @@ export const DebtCard = ({ debts }: { debts: Debt[] }) => {
                                     </Pie>
                                 </PieChart>
                             </ResponsiveContainer>
+                            {isMobile && (
+                                <div className="mt-4 pt-4 border-t border-border">
+                                    <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                                        Asset Breakdown
+                                    </h4>
+                                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                                        {debts.map((debt, index) => (
+                                            <div
+                                                key={debt.id}
+                                                className="flex items-center space-x-3"
+                                            >
+                                                <div
+                                                    className="w-3 h-3 rounded-full flex-shrink-0"
+                                                    style={{
+                                                        backgroundColor:
+                                                            colors[
+                                                                index %
+                                                                    colors.length
+                                                            ],
+                                                    }}
+                                                />
+                                                <span className="text-sm text-foreground truncate flex-1">
+                                                    {debt.name}
+                                                </span>
+                                                <span className="text-sm font-medium text-foreground">
+                                                    {formatCurrency(
+                                                        debt.amount
+                                                    )}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>
